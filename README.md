@@ -1,5 +1,5 @@
 # Ultimate Smasher
-A Smash Bros. Ultimate save editor written in Python
+A Super Smash Bros. Ultimate (Nintendo Switch) save editor written in Python
 
 Features
 =====
