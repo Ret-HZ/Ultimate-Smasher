@@ -22,3 +22,6 @@ Other features
 
 - Looks bad
 - The code is even worse
+
+
+*I'm not held responsible for data losses, PCs exploding, nuclear detonations...etc*
