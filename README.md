@@ -15,7 +15,7 @@ With Ultimate Smasher you can edit the following:
 
 It also allows to:
 * Unlock the full roster
-
+* Get All Cores
 
 Other features
 =====
