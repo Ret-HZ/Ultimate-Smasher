@@ -1,798 +1,911 @@
-import sys
+# -*- coding: utf-8 -*-
+import sys, os
 import getopt
-import Tkinter as tk
-import tkMessageBox
-from sys import argv
 from os.path import exists
-from tkFileDialog import *
 import binascii
 import struct
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+import functools
 
 
 
-class GUI(tk.Tk):
-	def __init__(self, *args, **kwargs):
-		tk.Tk.__init__(self, *args, **kwargs)
-		self.title("Ultimate Smasher v1.2.1")
-		self.geometry("500x500")
+class App(QMainWindow):
 
-		#Open and Save Buttons
-		self.btn_opensavefile = tk.Button(text="Open File", command=self.openfile)
-		self.btn_opensavefile.pack(side=tk.TOP, fill=tk.X)
+	def __init__(self):
+		super().__init__()
+		global dir
+		#dir="img/"
+		dir=sys._MEIPASS+"/"
+		self.title = "Ultimate Smasher 2.0-alpha1"
+		self.setWindowIcon(QIcon(dir+'icon.ico'))
+		width = 580
+		height = 240
+		qtRectangle = self.frameGeometry()
+		centerPoint = QDesktopWidget().availableGeometry().center()
+		qtRectangle.moveCenter(centerPoint)
+		self.move(qtRectangle.topLeft())
+		self.width = width
+		self.height = height
+		self.setFixedSize(width,height)
+		self.initUI()
 
-		self.btn_savefile = tk.Button(text="Save File", command=self.savefile)
-		self.btn_savefile.pack(side=tk.BOTTOM, fill=tk.X)
+	def initUI(self):
+		self.setWindowTitle(self.title)
 
-		#SP
-		self.sp=tk.IntVar()
-		self.lbl_sp = tk.Label(text = "SP")
-		self.lbl_sp.place(x=20,y=50)
-		self.txtbx_sp=tk.Entry(self, width=9, textvariable=self.sp)
-		self.txtbx_sp.place(x=90, y=50)
-		self.btn_checksp = tk.Button(self, text=u'\u2713',width=2, height=1, command=self.checksp)
-		self.btn_checksp.place(x=170,y=47)
 
-		#Gold
-		self.gold=tk.IntVar()
-		self.lbl_gold = tk.Label(text = "Gold")
-		self.lbl_gold.place(x=20,y=100)
-		self.txtbx_gold=tk.Entry(self, width=9, textvariable=self.gold)
-		self.txtbx_gold.place(x=90, y=100)
-		self.btn_checkgold = tk.Button(self, text=u'\u2713',width=2, height=1, command=self.checkgold)
-		self.btn_checkgold.place(x=170,y=97)
+		#########################################
+		#				MENUBAR					#
+		#########################################
 
-		#Hammers
-		self.hammers=tk.IntVar()
-		self.lbl_hammers = tk.Label(text = "Hammers")
-		self.lbl_hammers.place(x=20,y=150)
-		self.txtbx_hammers=tk.Entry(self, width=9, textvariable=self.hammers)
-		self.txtbx_hammers.place(x=90, y=150)
-		self.btn_checkhammers = tk.Button(self, text=u'\u2713',width=2, height=1, command=self.checkhammers)
-		self.btn_checkhammers.place(x=170,y=147)
+		menubar = self.menuBar()
+		fileMenu = menubar.addMenu('&File')
+		helpMenu = menubar.addMenu('&Help')
 
-		#Tickets
-		self.tickets=tk.IntVar()
-		self.lbl_tickets = tk.Label(text = "Tickets")
-		self.lbl_tickets.place(x=20,y=200)
-		self.txtbx_tickets=tk.Entry(self, width=9, textvariable=self.tickets)
-		self.txtbx_tickets.place(x=90, y=200)
-		self.btn_checktickets = tk.Button(self, text=u'\u2713',width=2, height=1, command=self.checktickets)
-		self.btn_checktickets.place(x=170,y=197)
+		fileMenu_open = QAction(QIcon(dir+'open_file.png'), '&Open', self)
+		fileMenu_open.setShortcut('Ctrl+O')
+		fileMenu_open.setStatusTip('Open File')
+		fileMenu_open.triggered.connect(self.openfile)
 
-		#Snack (S)
-		self.snacks=tk.IntVar()
-		self.lbl_snacks = tk.Label(text = "Snack (S)")
-		self.lbl_snacks.place(x=20,y=250)
-		self.txtbx_snacks=tk.Entry(self, width=9, textvariable=self.snacks)
-		self.txtbx_snacks.place(x=90, y=250)
-		self.btn_checksnacks = tk.Button(self, text=u'\u2713',width=2, height=1, command=self.checksnacks)
-		self.btn_checksnacks.place(x=170,y=247)
+		fileMenu_save = QAction(QIcon(dir+'save_file.png'), '&Save', self)
+		fileMenu_save.setShortcut('Ctrl+S')
+		fileMenu_save.setStatusTip('Save File')
+		fileMenu_save.triggered.connect(self.savefile)
 
-		#Snack (M)
-		self.snackm=tk.IntVar()
-		self.lbl_snackm = tk.Label(text = "Snack (M)")
-		self.lbl_snackm.place(x=20,y=300)
-		self.txtbx_snackm=tk.Entry(self, width=9, textvariable=self.snackm)
-		self.txtbx_snackm.place(x=90, y=300)
-		self.btn_checksnackm = tk.Button(self, text=u'\u2713',width=2, height=1, command=self.checksnackm)
-		self.btn_checksnackm.place(x=170,y=297)
+		fileMenu_exit = QAction(QIcon(dir+'exit.png'), '&Exit', self)
+		fileMenu_exit.setShortcut('Ctrl+Q')
+		fileMenu_exit.setStatusTip('Exit')
+		fileMenu_exit.triggered.connect(qApp.quit)
 
-		#Snack (L)
-		self.snackl=tk.IntVar()
-		self.lbl_snackl = tk.Label(text = "Snack (L)")
-		self.lbl_snackl.place(x=20,y=350)
-		self.txtbx_snackl=tk.Entry(self, width=9, textvariable=self.snackl)
-		self.txtbx_snackl.place(x=90, y=350)
-		self.btn_checksnackl = tk.Button(self, text=u'\u2713',width=2, height=1, command=self.checksnackl)
-		self.btn_checksnackl.place(x=170,y=347)
+		helpMenu_usage = QAction(QIcon(dir+'help.png'), '&How to use', self)
+		helpMenu_usage.setShortcut('Ctrl+H')
+		helpMenu_usage.setStatusTip('How to use')
+		helpMenu_usage.triggered.connect(self.show_howto)
 
-		#Roster
-		self.btn_unlockroster = tk.Button(self, text="Unlock Roster", command=self.unlockroster)
-		self.btn_unlockroster.place(x=300,y=47)
+		helpMenu_about = QAction(QIcon(dir+'about.png'), '&About', self)
+		helpMenu_about.setStatusTip('About')
+		helpMenu_about.triggered.connect(self.show_about)
 
-		#Characters
-		self.btn_characters = tk.Button(self, text="Character Menu", command=self.characters)
-		self.btn_characters.place(x=300,y=97)
+		fileMenu.addAction(fileMenu_open)
+		fileMenu.addAction(fileMenu_save)
+		fileMenu.addAction(fileMenu_exit)
+		helpMenu.addAction(helpMenu_usage)
+		helpMenu.addAction(helpMenu_about)
 
-		#Cores and Stickers
-		self.btn_unlockcores = tk.Button(self, text="All Cores and Stickers", command=self.unlockcores)
-		self.btn_unlockcores.place(x=300,y=147)
-		
-		#Spirits
-		self.btn_unlockspirits = tk.Button(self, text="All Spirits", command=self.unlockspirits)
-		self.btn_unlockspirits.place(x=300,y=197)
-		
-		#Spirit Board
-		self.btn_spiritboard = tk.Button(self, state="disabled", text="Full Size Spirit Board (WIP)", command=self.spiritboard)
-		self.btn_spiritboard.place(x=300,y=247)
+		#########################################
+		#				TOOLBAR					#
+		#########################################
 
-		#Milestones
-		self.btn_unlockmilestones = tk.Button(self, text="Unlock Milestones", command=self.unlockmilestones)
-		self.btn_unlockmilestones.place(x=300,y=297)
+		toolbar = self.addToolBar("File")
+		toolbar.setMovable(False)
 
-		#Mii Clothes
-		self.btn_unlockmiiclothes = tk.Button(self, text="Unlock Mii Clothes", command=self.unlockmiiclothes)
-		self.btn_unlockmiiclothes.place(x=300,y=347)
-		
-		#Stores, Explore, Gym, Dojo, Music
-		self.btn_storesexploregymdojomusic = tk.Button(self, text="Unlock Stores, Exploration,\nGym, Dojo and Music", command=self.storesexploregymdojomusic)
-		self.btn_storesexploregymdojomusic.place(x=300,y=397)
-		
+		toolbar_openfile = QAction(QIcon(dir+"open_file.png"),"Open File",self)
+		toolbar_openfile.triggered.connect(self.openfile)
 
+		toolbar_savefile = QAction(QIcon(dir+"save_file.png"),"Save File",self)
+		toolbar_savefile.triggered.connect(self.savefile)
+
+		toolbar.addAction(toolbar_openfile)
+		toolbar.addAction(toolbar_savefile)
+
+
+		#########################################
+		#				TABS					#
+		#########################################
+
+		centralWidget = QWidget(self)
+		centralWidgetLayout = QVBoxLayout(centralWidget)
+		centralWidget.setLayout(centralWidgetLayout)
+
+		tabContainer = QTabWidget(centralWidget)
+
+		tab1 = QWidget(tabContainer)
+		tab2 = QWidget(tabContainer)
+		tab3 = QWidget(tabContainer)
+		tab4 = QWidget(tabContainer)
+		tab5 = QWidget(tabContainer)
+
+		tab1layout = QVBoxLayout(tab1)
+
+		tabContainer.setLayout(tab1layout)
+
+		tabContainer.addTab(tab1, "General")
+		tabContainer.addTab(tab2, "Items")
+		tabContainer.addTab(tab3, "Characters")
+		tabContainer.addTab(tab4, "Adventure Mode")
+		tabContainer.addTab(tab5, "Stats")
+		tabContainer.setCurrentIndex(0)
+		tabContainer.setTabEnabled(3,False)  #WIP
+		centralWidgetLayout.addWidget(tabContainer)
+		self.setCentralWidget(centralWidget)
+
+
+		#########################################
+		#				BUTTONS					#
+		#########################################
+		def showSprite(tab,image,x,y):
+			sprite = QLabel(tab)
+			spr=QPixmap(image)
+			spr2=spr.scaled(20,20,Qt.KeepAspectRatio)
+			sprite.setPixmap(spr2)
+			sprite.move(x,y)
+			sprite.show()
+
+
+		#GENERAL#
+
+		btn_language = QPushButton('Language', tab1)
+		btn_language.setToolTip('Change the current language')
+		btn_language.move(35,30)
+		btn_language.clicked.connect(self.inputLanguage)
+
+		btn_gold = QPushButton('Gold', tab1)
+		btn_gold.setToolTip('Gold amount')
+		btn_gold.move(135,30)
+		btn_gold.clicked.connect(self.inputGold)
+
+		btn_sp = QPushButton('SP', tab1)
+		btn_sp.setToolTip('SP amount')
+		btn_sp.move(235,30)
+		btn_sp.clicked.connect(self.inputSP)
+
+		btn_hammers = QPushButton('Hammers', tab1)
+		btn_hammers.setToolTip('Hammers amount')
+		btn_hammers.move(335,30)
+		btn_hammers.clicked.connect(self.inputHammers)
+
+		btn_tickets = QPushButton('Tickets', tab1)
+		btn_tickets.setToolTip('Ticket amount')
+		btn_tickets.move(435,30)
+		btn_tickets.clicked.connect(self.inputTickets)
+
+		btn_milestones = QPushButton('Milestones', tab1)
+		btn_milestones.setToolTip('Unlocks all Milestones')
+		btn_milestones.move(35,90)
+		btn_milestones.clicked.connect(self.unlockmilestones)
+
+		btn_miiclothes = QPushButton('Mii Clothes', tab1)
+		btn_miiclothes.setToolTip('Unlocks all Mii Clothes')
+		btn_miiclothes.move(135,90)
+		btn_miiclothes.clicked.connect(self.unlockmiiclothes)
+
+		btn_cores = QPushButton('Cores', tab1)
+		btn_cores.setToolTip('Unlocks all Cores')
+		btn_cores.move(235,90)
+		#btn_cores.clicked.connect()
+		btn_cores.setEnabled(False)
+
+		btn_spirits = QPushButton('Spirits', tab1)
+		btn_spirits.setToolTip('Unlocks all Spirits')
+		btn_spirits.move(335,90)
+		#btn_spirits.clicked.connect()
+		btn_spirits.setEnabled(False)
+
+		btn_spiritboard = QPushButton('Spirit Board', tab1)
+		btn_spiritboard.setToolTip('Unlocks all Spirit Board slots')
+		btn_spiritboard.move(435,90)
+		#btn_spiritboard.clicked.connect()
+		btn_spiritboard.setEnabled(False)
+
+
+		#ITEMS#
+
+		showSprite(tab2,dir+"snacks.png",10,20)
+		showSprite(tab2,dir+"snackm.png",10,60)
+		showSprite(tab2,dir+"snackl.png",10,100)
+		showSprite(tab2,dir+"shuffle.png",120,21)
+		showSprite(tab2,dir+"allprimaries.png",120,61)
+		showSprite(tab2,dir+"allsupports.png",120,101)
+		showSprite(tab2,dir+"rematch.png",230,21)
+		showSprite(tab2,dir+"filler.png",230,61)
+		showSprite(tab2,dir+"damage50.png",230,101)
+		showSprite(tab2,dir+"slowfscharging.png",340,21)
+		showSprite(tab2,dir+"weakenminions.png",340,61)
+		showSprite(tab2,dir+"healthdrain.png",340,101)
+		showSprite(tab2,dir+"disableitems.png",450,21)
+		showSprite(tab2,dir+"shieldspacer.png",450,61)
+		showSprite(tab2,dir+"sluggishshield.png",450,101)
+
+
+		btn_snackS = QPushButton('Snack (S)', tab2)
+		btn_snackS.setToolTip('Snack (S) amount')
+		btn_snackS.move(30,20)
+		btn_snackS.clicked.connect(self.inputSnackS)
+
+		btn_snackM = QPushButton('Snack (M)', tab2)
+		btn_snackM.setToolTip('Snack (M) amount')
+		btn_snackM.move(30,60)
+		btn_snackM.clicked.connect(self.inputSnackM)
+
+		btn_snackL = QPushButton('Snack (L)', tab2)
+		btn_snackL.setToolTip('Snack (L) amount')
+		btn_snackL.move(30,100)
+		btn_snackL.clicked.connect(self.inputSnackL)
+
+		btn_shuffleAll = QPushButton('Shuffle All', tab2)
+		btn_shuffleAll.setToolTip('Shuffle All amount')
+		btn_shuffleAll.move(140,20)
+		btn_shuffleAll.clicked.connect(self.inputShuffleAll)
+
+		btn_allPrimaries = QPushButton('All Primaries', tab2)
+		btn_allPrimaries.setToolTip('Shuffle All amount')
+		btn_allPrimaries.move(140,60)
+		btn_allPrimaries.clicked.connect(self.inputAllPrimaries)
+
+		btn_allSupports = QPushButton('All Supports', tab2)
+		btn_allSupports.setToolTip('Shuffle All amount')
+		btn_allSupports.move(140,100)
+		btn_allSupports.clicked.connect(self.inputAllSupports)
+
+		btn_rematch = QPushButton('Rematch', tab2)
+		btn_rematch.setToolTip('Rematch amount')
+		btn_rematch.move(250,20)
+		btn_rematch.clicked.connect(self.inputRematch)
+
+		btn_filler = QPushButton('Filler', tab2)
+		btn_filler.setToolTip('Filler amount')
+		btn_filler.move(250,60)
+		btn_filler.clicked.connect(self.inputFiller)
+
+		btn_damage50 = QPushButton('Damage 50%', tab2)
+		btn_damage50.setToolTip('Damage 50% amount')
+		btn_damage50.move(250,100)
+		btn_damage50.clicked.connect(self.inputDamage50)
+
+		btn_slowFSCharging = QPushButton('Slow FS Chrg.', tab2)
+		btn_slowFSCharging.setToolTip('Slow FS Charging amount')
+		btn_slowFSCharging.move(360,20)
+		btn_slowFSCharging.clicked.connect(self.inputSlowFSCharging)
+
+		btn_weakenMinions = QPushButton('Wkn. Minions', tab2)
+		btn_weakenMinions.setToolTip('Weak. Minions amount')
+		btn_weakenMinions.move(360,60)
+		btn_weakenMinions.clicked.connect(self.inputWeakenMinions)
+
+		btn_healthDrain = QPushButton('Health Drain', tab2)
+		btn_healthDrain.setToolTip('Health Drain amount')
+		btn_healthDrain.move(360,100)
+		btn_healthDrain.clicked.connect(self.inputHealthDrain)
+
+		btn_disableItems = QPushButton('Disable Items', tab2)
+		btn_disableItems.setToolTip('Disable Items amount')
+		btn_disableItems.move(470,20)
+		btn_disableItems.clicked.connect(self.inputDisableItems)
+
+		btn_shieldSpacer = QPushButton('Shield Spacer', tab2)
+		btn_shieldSpacer.setToolTip('Shield Spacer amount')
+		btn_shieldSpacer.move(470,60)
+		btn_shieldSpacer.clicked.connect(self.inputShieldSpacer)
+
+		btn_sluggishShield = QPushButton('Sluggish Shld.', tab2)
+		btn_sluggishShield.setToolTip('Sluggish Shield amount')
+		btn_sluggishShield.move(470,100)
+		btn_sluggishShield.clicked.connect(self.inputSluggishShield)
+
+
+		#CHARACTERS#
+		btn_charmenu = QPushButton('Character Menu', tab3)
+		btn_charmenu.setToolTip('(Un)Lock specific characters')
+		btn_charmenu.move(235,60)
+		btn_charmenu.clicked.connect(self.show_charmenu)
+
+
+		#ADVENTURE MODE#
+
+
+		#STATS#
+		btn_combined = QPushButton('Combined', tab5)
+		btn_combined.setToolTip('"Combined" Stat Section')
+		btn_combined.move(35,30)
+		btn_combined.clicked.connect(lambda: self.show_statwindow("Combined"))
+
+		btn_combined = QPushButton('Smash', tab5)
+		btn_combined.setToolTip('"Smash" Stat Section')
+		btn_combined.move(235,30)
+		btn_combined.clicked.connect(lambda: self.show_statwindow("Smash"))
+
+		btn_combined = QPushButton('Spirits', tab5)
+		btn_combined.setToolTip('"Spirits" Stat Section')
+		btn_combined.move(435,30)
+		btn_combined.clicked.connect(lambda: self.show_statwindow("Spirits"))
+
+		btn_combined = QPushButton('Games && More', tab5)
+		btn_combined.setToolTip('"Games & More" Stat Section')
+		btn_combined.move(35,90)
+		btn_combined.clicked.connect(lambda: self.show_statwindow("Games & More"))
+
+		btn_combined = QPushButton('Vault', tab5)
+		btn_combined.setToolTip('"Vault" Stat Section')
+		btn_combined.move(235,90)
+		btn_combined.clicked.connect(lambda: self.show_statwindow("Vault"))
+
+		btn_combined = QPushButton('Online', tab5)
+		btn_combined.setToolTip('"Online" Stat Section')
+		btn_combined.move(435,90)
+		btn_combined.clicked.connect(lambda: self.show_statwindow("Online"))
+
+
+		comboBox = QComboBox(tab4)
+		comboBox.addItem("Slot 1")
+		comboBox.addItem("Slot 2")
+		comboBox.addItem("Slot 3")
+		comboBox.move(50, 50)
+		#comboBox.activated.activated[str].connect(self.slot_select)
+
+
+		self.show()
+
+
+
+
+#Value Inputs
+	@pyqtSlot()
 	def openfile(self):
-		filename = askopenfilename(initialfile="system_data.bin")
-		f = open(filename, "r+b").read()
-		global h
-		h=(binascii.hexlify(f))
-		tkMessageBox.showinfo(title="", message="Savefile loaded")
-
-		#Fills every box with its data
-		if "h" in globals():
-
-			#SP
-			sp=(binascii.hexlify(f[0x4831e4:0x4831e8]))
-			sp1=(binascii.unhexlify(sp))
-			sp2= struct.unpack("<L",sp1)
-			self.txtbx_sp.delete(0,"end")
-			self.txtbx_sp.insert(tk.END,sp2)
-
-			#Gold
-			gold=(binascii.hexlify(f[0x5506dc:0x5506e0]))
-			gold1=(binascii.unhexlify(gold))
-			gold2= struct.unpack("<L",gold1)
-			self.txtbx_gold.delete(0,"end")
-			self.txtbx_gold.insert(tk.END,gold2)
-
-			#Snack (S)
-			snacks=(binascii.hexlify(f[0x4831CE:0x4831D0]))
-			snacks1=(binascii.unhexlify(snacks))
-			snacks2= struct.unpack("<H",snacks1)
-			self.txtbx_snacks.delete(0,"end")
-			self.txtbx_snacks.insert(tk.END,snacks2)
-
-			#Snack (M)
-			snackm=(binascii.hexlify(f[0x4831D0:0x4831D2]))
-			snackm1=(binascii.unhexlify(snackm))
-			snackm2= struct.unpack("<H",snackm1)
-			self.txtbx_snackm.delete(0,"end")
-			self.txtbx_snackm.insert(tk.END,snackm2)
-
-			#Snack (L)
-			snackl=(binascii.hexlify(f[0x4831D2:0x4831D4]))
-			snackl1=(binascii.unhexlify(snackl))
-			snackl2= struct.unpack("<H",snackl1)
-			self.txtbx_snackl.delete(0,"end")
-			self.txtbx_snackl.insert(tk.END,snackl2)
-
-			#Hammers
-			hammers=(binascii.hexlify(f[0x555E5C:0x555E5D]))
-			hammers1=(binascii.unhexlify(hammers))
-			hammers2= struct.unpack("<B",hammers1)
-			self.txtbx_hammers.delete(0,"end")
-			self.txtbx_hammers.insert(tk.END,hammers2)
-
-			#Tickets
-			tickets=(binascii.hexlify(f[0x5506CC:0x5506CD]))
-			tickets1=(binascii.unhexlify(tickets))
-			tickets2= struct.unpack("<B",tickets1)
-			self.txtbx_tickets.delete(0,"end")
-			self.txtbx_tickets.insert(tk.END,tickets2)
+		filename = QFileDialog.getOpenFileName(self, 'Open File', 'system_data.bin',"Binary files (*.bin)")
+		if filename[0] is '':
+			return
+		if (os.path.getsize(filename[0])==5982968): #Filesize check
+			f = open(filename[0], "rb").read()
+			global h
+			h=(binascii.hexlify(f))
+		else:
+			msg = QMessageBox()
+			msg.setIcon(QMessageBox.Warning)
+			msg.setText("Not a valid savefile!")
+			msg.setWindowTitle("Not valid")
+			msg.setWindowIcon(QIcon(dir+'icon.ico'))
+			msg.exec_()
 
 
 	def savefile(self):
-		savedir = asksaveasfile(mode='wb', defaultextension='.bin', initialfile="system_data")
-		if savedir is None:
-			return
-		savedir.write(binascii.unhexlify(h))
-		savedir.close()
-		tkMessageBox.showinfo(title="", message="File saved")
+		if self.checkforsave():
+			savedir = QFileDialog.getSaveFileName(self, 'Save File', 'system_data.bin',"Binary files (*.bin)")
+			if savedir[0] is '':
+				return
+			file = open(savedir[0],"wb")
+			file.write(binascii.unhexlify(h))
+			file.close()
+
+	#Check if a savefile is open
+	def checkforsave(self):
+		if "h" in globals():
+			return True
+		else:
+			msg = QMessageBox()
+			msg.setIcon(QMessageBox.Warning)
+			msg.setText("Open a <b>Save File</b> first!")
+			msg.setWindowTitle("No Save File")
+			msg.setWindowIcon(QIcon(dir+'icon.ico'))
+			msg.exec_()
+			return False
+
+
+	def show_howto(self):
+		global dir
+		howto = QDialog(None, Qt.WindowSystemMenuHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+		howto.setWindowTitle("How To Use")
+		howto.setWindowIcon(QIcon(dir+'help.png'))
+		width=360
+		height=160
+		howto.resize(width,height)
+		howto.setFixedSize(width,height)
+		howto.setWindowModality(Qt.ApplicationModal)
+
+		l1=QLabel()
+		l2=QLabel()
+
+		l1.setText("<center><b>HOW TO USE</b><br><br></center>")
+		l2.setText("<ul><li>1. Dump your save with your preferred save manager</li><li>2. Open your save (system_data.bin)</li><li>3. Edit stuff to your liking</li><li>4. Save it (Ctrl + S)</li><li>5. Overwrite your save with the one you just edited</li><li>6. That's it!</li></ul>")
 		
-	def characterwrite(self, charoffset):
-		global charwindow
+		
+		l1.setAlignment(Qt.AlignLeft)
+		l2.setAlignment(Qt.AlignLeft)
+		
+
+		vbox = QVBoxLayout()
+		vbox.addWidget(l1)
+		vbox.addWidget(l2)
+		vbox.addStretch()
+		howto.setLayout(vbox)
+		howto.exec_()
+
+
+	def show_about(self):
+		global dir
+		about = QDialog(None, Qt.WindowSystemMenuHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+		about.setWindowTitle("About")
+		about.setWindowIcon(QIcon(dir+'about.png'))
+		width=420
+		height=300
+		about.resize(width,height)
+		about.setFixedSize(width,height)
+		about.setWindowModality(Qt.ApplicationModal)
+
+		l1=QLabel()
+		l1.setText("<b>THIS SOFTWARE MUST NOT BE SOLD,<br>NEITHER ALONE NOR AS PART OF A BUNDLE.<br><br>IF YOU PAID FOR THIS SOFTWARE OR RECEIVED<br>IT AS PART OF A BUNDLE FOLLOWING PAYMENT,<br>YOU HAVE BEEN SCAMMED AND SHOULD<br>DEMAND YOUR MONEY BACK IMMEDIATELY.</b><br>")
+		l1.setAlignment(Qt.AlignCenter)
+		l2=QLabel()
+		l2.setText("Created by: <a href=\"https://github.com/CapitanRetraso\"><b>Capitán Retraso</b></a>")
+		l2.setOpenExternalLinks(True)
+		l2.setAlignment(Qt.AlignLeft)
+		l3=QLabel()
+		l3.setText("<br>Special Thanks: <a href=\"https://gbatemp.net/members/stoned.347253\">Stoned</a>")
+		l3.setOpenExternalLinks(True)
+		l3.setAlignment(Qt.AlignLeft)
+		l4=QLabel()
+		l4.setText("<a href=\"https://github.com/CapitanRetraso/Ultimate-Smasher/issues\"><b>Report a problem</b></a>")
+		l4.setOpenExternalLinks(True)
+		l4.setAlignment(Qt.AlignRight)
+		l5=QLabel()
+		l5.setText("<b>DISCLAIMER</b><br> This tool can damage your savegame or cause a ban if not used correctly.<br><b>By using it you are responsible for any data lost or ban.</b><br>Be careful when editing your savegame and always keep a clean backup.")
+		l5.setAlignment(Qt.AlignCenter)
+
+		vbox = QVBoxLayout()
+		vbox.addWidget(l1)
+		vbox.addStretch()
+		vbox.addWidget(l5)
+		vbox.addStretch()
+		vbox.addWidget(l2)
+		vbox.addWidget(l3)
+		vbox.addWidget(l4)
+		about.setLayout(vbox)
+
+		about.exec_()
+
+
+	def show_statwindow(self,category):
+		if self.checkforsave():
+			statwindow = QDialog(None, Qt.WindowSystemMenuHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+			statwindow.setWindowTitle("Stats - "+category)
+			statwindow.setWindowIcon(QIcon(dir+'icon.ico'))
+			width=550
+			height=400
+			statwindow.resize(width,height)
+			statwindow.setFixedSize(width,height)
+			self.layout = QVBoxLayout()
+
+
+
+			if (category == "Combined"):
+				statNames=['Power-On Count','Smash Bros. Powered Time Count','Play Time (seconds)','Local Wireless Battles Fought','Time Battles Fought','Stock Battles Fought','Stamina Battles Fought','Battles Fought with 5 or more people','Battles Fought with 8 people','Vs. Play Contestants','Battles Cut Short','Total Damage','KOs','Self-Destructs']
+				statOffsets=[0x540258,0x54025C,0x540260,0x540264,0x540268,0x54026C,0x540270,0x540274,0x540278,0x54027C,0x540280,0x540284,0x540288,0x54028C]
+
+			elif (category == "Smash"):
+				statNames=['Smash Play Time (seconds)','Collective Smash Play Time (seconds)','Standard Smash Battles Fought','Squad Strikes Battles Fought','Custom Smash Battles Fought','Super Sudden Death Battles Fought','Smashdown Battles Fought','Tourney Battles Fought']
+				statOffsets=[0x54029C,0x5402A0,0x5402A4,0x5402A8,0x5402AC,0x5402B0,0x5402B4,0x5402B8]
+
+			elif (category == "Spirits"):
+				statNames=['Spirits Summoned','Spirits Dismissed','Spirits Enhanced','Lv.99 Spirits','Adventure Wins','Times Adventure Completed','Styles Mastered in the Dojo','Time Spent Training at the Gym (seconds)','Spirit Exploration Time (seconds)','Spirit Board Battles Won']
+				statOffsets=[0x5402C0,0x5402C4,0x5402C8,0x5402CC,0x5402D4,0x5402D8,0x5402DC,0x5402E0,0x5402E4,0x5402D0]
+
+			elif (category == "Games & More"):
+				statNames=['Classic Mode Clears','Bonus Game High Score','Credits High Score','Mii Fighters Customized']
+				statOffsets=[0x5402E8,0x5402F0,0x5402F4,0x5402FC]
+
+			elif (category == "Vault"):
+				statNames=['Snapshots Taken','Replays Recorded','Videos Created','Smash Tags Claimed']
+				statOffsets=[0x54030C,0x540310,0x540314,0x540318]
+
+			elif (category == "Online"):
+				statNames=['Online Play Time','Solo Quickplay Battles','Solo Quickplay Wins','Highest Global Smash Power','Highest Total Global Smash Power','Co-op Quickplay Battles','Co-op Quickplay Wins','Elite Quickplay Battles','Elite Quickplay Wins','Arena Battles']
+				statOffsets=[0x540320,0x540324,0x540328,0x54032C,0x540330,0x540334,0x540338,0x54033C,0x540340,0x540344]
+
+
+			self.tableWidget = QTableWidget()
+			self.tableWidget.setColumnCount(2)
+			self.tableWidget.setRowCount(len(statNames))
+
+			for x in range (len(statOffsets)):
+				self.tableWidget.setItem(x,0, QTableWidgetItem(statNames[x]))
+				self.tableWidget.setItem(x,1, QTableWidgetItem(str(self.readFromPosition(statOffsets[x],statOffsets[x]+4,"<L"))))
+
+			def writeStats():
+				for x in range (len(statOffsets)):
+					value=int(self.tableWidget.item(x,1).text())
+					if (value <= 0x3B9AC9FF):
+						self.writeToPosition(value,statOffsets[x],statOffsets[x]+4,"<L")
+					else:
+						msg = QMessageBox()
+						msg.setIcon(QMessageBox.Warning)
+						msg.setText("One or more values are too high!")
+						msg.setWindowTitle("Error")
+						msg.exec_()
+						return
+					
+
+					if (x == len(statOffsets)-1):
+						statwindow.done(0)
+
+
+			button_save = QPushButton("Save Changes")
+			button_save.clicked.connect(writeStats)
+			button_cancel = QPushButton("Cancel")
+			button_cancel.clicked.connect(statwindow.done)
+			hbox = QHBoxLayout()
+			hbox.addWidget(button_save)
+			hbox.addWidget(button_cancel)
+			self.layout.addLayout(hbox)
+
+
+			self.tableWidget.setHorizontalHeaderLabels(['Name', 'Value'])
+			self.tableWidget.verticalHeader().hide()
+			self.tableWidget.setColumnWidth(0,350)
+			self.tableWidget.setColumnWidth(1,150)
+			self.layout.addWidget(self.tableWidget)
+			statwindow.setLayout(self.layout)
+			statwindow.setWindowModality(Qt.ApplicationModal)
+			statwindow.exec_()
+
+
+	def show_charmenu(self):
+		global dir
+		charmenu = QDialog(None, Qt.WindowSystemMenuHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+		charmenu.setWindowTitle("Character Menu")
+		charmenu.setWindowIcon(QIcon(dir+'icon.ico'))
+		width=958
+		height=510
+		charmenu.resize(width,height)
+		charmenu.setFixedSize(width,height)
+		charmenu.setStyleSheet("background-color: black;")
+
+
+
+		##CHARMENU BUTTONS##
+
+		def char_button(charactername, image, offset, x, y):
+			btn_char = QPushButton('', charmenu)
+			btn_char.setIcon(QIcon(dir+image))
+			btn_char.setIconSize(QSize(94,62))
+			btn_char.resize(QSize(94,62))
+			btn_char.move(x,y)
+			btn_char.clicked.connect(lambda: self.characterwrite(offset,charactername))
+
+
+		#char_button(Character Name, Image, Offset, x, y)
+		char_button("Mario","mario.png",0x53FF40,0,0)
+		char_button("Donkey Kong","dk.png",0x53FF48,96,0)
+		char_button("Link","link.png",0x53FF50,192,0)
+		char_button("Samus","samus.png",0x53FF58,288,0)
+		char_button("Dark Samus","darksamus.png",0x53FF60,384,0)
+		char_button("Yoshi","yoshi.png",0x53FF68,480,0)
+		char_button("Kirby","kirby.png",0x53FF70,576,0)
+		char_button("Fox","fox.png",0x53FF78,672,0)
+		char_button("Pikachu","pikachu.png",0x53FF80,768,0)
+		char_button("Luigi","luigi.png",0x53FF88,864,0)
+		char_button("Ness","ness.png",0x53FF90,0,64)
+		char_button("Captain Falcon","captainfalcon.png",0x53FF98,96,64)
+		char_button("Jigglypuff","jigglypuff.png",0x53FFA0,192,64)
+		char_button("Peach","peach.png",0x53FFA8,288,64)
+		char_button("Daisy","daisy.png",0x53FFB0,384,64)
+		char_button("Bowser","bowser.png",0x53FFB8,480,64)
+		char_button("Ice Climbers","iceclimbers.png",0x53FFC0,576,64)
+		char_button("Sheik","sheik.png",0x53FFC8,672,64)
+		char_button("Zelda","zelda.png",0x53FFD0,768,64)
+		char_button("Dr. Mario","drmario.png",0x53FFD8,864,64)
+		char_button("Pichu","pichu.png",0x53FFE0,0,128)
+		char_button("Falco","falco.png",0x53FFE8,96,128)
+		char_button("Marth","marth.png",0x53FFF0,192,128)
+		char_button("Lucina","lucina.png",0x53FFF8,288,128)
+		char_button("Young Link","younglink.png",0x540000,384,128)
+		char_button("Ganondorf","ganondorf.png",0x540008,480,128)
+		char_button("Mewtwo","mewtwo.png",0x540010,576,128)
+		char_button("Roy","Roy.png",0x540018,672,128)
+		char_button("Chrom","Chrom.png",0x540020,768,128)
+		char_button("Mr. Game & Watch","mrgameandwatch.png",0x540028,864,128)
+		char_button("Meta Knight","metaknight.png",0x540030,0,192)
+		char_button("Pit","pit.png",0x540038,96,192)
+		char_button("Dark Pit","darkpit.png",0x540040,192,192)
+		char_button("Zero Suit Samus","zerosuitsamus.png",0x540048,288,192)
+		char_button("Wario","wario.png",0x540050,384,192)
+		char_button("Snake","snake.png",0x540058,480,192)
+		char_button("Ike","ike.png",0x540060,576,192)
+		char_button("Pokémon Trainer","pokemontrainer.png",0x540068,672,192)
+		char_button("Diddy Kong","diddykong.png",0x540070,768,192)
+		char_button("Lucas","lucas.png",0x540078,864,192)
+		char_button("Sonic","sonic.png",0x540080,0,256)
+		char_button("King Dedede","kingdedede.png",0x540088,96,256)
+		char_button("Olimar","olimar.png",0x540090,192,256)
+		char_button("Lucario","lucario.png",0x540098,288,256)
+		char_button("R.O.B.","rob.png",0x5400A0,384,256)
+		char_button("Toon Link","toonlink.png",0x5400A8,480,256)
+		char_button("Wolf","wolf.png",0x5400B0,576,256)
+		char_button("Villager","villager.png",0x5400B8,672,256)
+		char_button("Mega Man","megaman.png",0x5400C0,768,256)
+		char_button("Wii Fit Trainer","wiifittrainer.png",0x5400C8,864,256)
+		char_button("Rosalina & Luma","rosalinaandluma.png",0x5400D0,0,320)
+		char_button("Little Mac","littlemac.png",0x5400D8,96,320)
+		char_button("Greninja","greninja.png",0x5400E0,192,320)
+		char_button("Palutena","palutena.png",0x5400E8,288,320)
+		char_button("PAC-MAN","pacman.png",0x5400F0,384,320)
+		char_button("Robin","robin.png",0x5400F8,480,320)
+		char_button("Shulk","shulk.png",0x540100,576,320)
+		char_button("Bowser Jr.","bowserjr.png",0x540108,672,320)
+		char_button("Duck Hunt Duo","duckhuntduo.png",0x540110,768,320)
+		char_button("Ryu","ryu.png",0x540118,864,320)
+		char_button("Ken","ken.png",0x540120,0,384)
+		char_button("Cloud","cloud.png",0x540128,96,384)
+		char_button("Corrin","corrin.png",0x540130,192,384)
+		char_button("Bayonetta","bayonetta.png",0x540138,288,384)
+		char_button("Inkling","inkling.png",0x540138,384,384)
+		char_button("Ridley","ridley.png",0x540140,480,384)
+		char_button("Simon","simon.png",0x540148,576,384)
+		char_button("Richter","richter.png",0x540150,672,384)
+		char_button("King K. Rool","kingkrool.png",0x540158,768,384)
+		char_button("Isabelle","isabelle.png",0x540160,864,384)
+		char_button("Incineroar","incineroar.png",0x540168,336,448)
+
+		btn_unlockall = QPushButton('', charmenu)
+		btn_unlockall.setIcon(QIcon(dir+"unlockall.png"))
+		btn_unlockall.setIconSize(QSize(94,62))
+		btn_unlockall.resize(QSize(94,62))
+		btn_unlockall.move(432,448)
+		btn_unlockall.clicked.connect(lambda: self.characterlockunlockall("unlock"))
+
+		btn_lockall = QPushButton('', charmenu)
+		btn_lockall.setIcon(QIcon(dir+"lockall.png"))
+		btn_lockall.setIconSize(QSize(94,62))
+		btn_lockall.resize(QSize(94,62))
+		btn_lockall.move(528,448)
+		btn_lockall.clicked.connect(lambda: self.characterlockunlockall("lock"))
+
+		charmenu.setWindowModality(Qt.ApplicationModal)
+		charmenu.exec_()
+
+
+	def readFromPosition (self, startOffset, endOffset, type):
+		valueToRead=(binascii.unhexlify(h[startOffset*2:endOffset*2]))
+		valueToRead1=struct.unpack(type,valueToRead)
+		valueToRead2=functools.reduce(lambda rst, d: rst * 10 + d, (valueToRead1))
+		return valueToRead2
+
+
+	def writeToPosition (self, value, startOffset, endOffset, type):
 		global h
-		position=h[charoffset*2:(charoffset+1)*2]
-		if position=="01": 
-			h=h[:charoffset*2]+"00"+h[(charoffset+1)*2:]
-			tkMessageBox.showinfo(parent=charwindow, title="", message="Locked!")
-		elif position=="00":
-			h=h[:charoffset*2]+"01"+h[(charoffset+1)*2:]
-			tkMessageBox.showinfo(parent=charwindow, title="", message="Unlocked!")
-		else: tkMessageBox.showerror(parent=charwindow, title="", message="Something broke")
+		valueToWrite = binascii.hexlify(struct.pack(type, value))
+		h=h[:startOffset*2]+valueToWrite+h[endOffset*2:]
 
 
-	#Checks for each value to notify of possible save corruption and applies the textbox value
-	def checksp(self):
-		sp = int(self.sp.get())
-		if sp <= 0x98967F:
-			tkMessageBox.showinfo(title="OK", message="The value is valid.")
-			sp1 = binascii.hexlify(struct.pack("<I",sp))
+	def writeToPositionStr (self, hexstring, startOffset, endOffset):
+		global h
+		h=h[:startOffset*2]+hexstring+h[endOffset*2:]
+
+
+	def characterwrite(self, charoffset,charactername):
+		if self.checkforsave():
 			global h
-			h=h[:0x4831e4*2]+sp1+h[0x4831e8*2:]
-			h=h[:0x540298*2]+sp1+h[0x54029c*2:] #Obtained SP record data
-		else:
-			tkMessageBox.showerror(title="ERROR", message="The value is too big!\nMax. value is 9999999")
-			self.txtbx_sp.delete(0,"end")
-			self.txtbx_sp.insert(tk.END,0x98967F)
+			position=self.readFromPosition(charoffset,charoffset+1,"<B")
 
-	def checkgold(self):
-		gold = int(self.gold.get())
-		if gold <= 0x98967F:
-			tkMessageBox.showinfo(title="OK", message="The value is valid.")
-			gold1 = binascii.hexlify(struct.pack("<I",gold))
-			goldspentreset = binascii.hexlify(struct.pack("<I",0))
+			if position==1:
+				self.writeToPosition(0,charoffset,(charoffset+1),"<B")
+
+				msg = QMessageBox()
+				msg.setIcon(QMessageBox.Information)
+				msg.setText("<b>"+charactername+"</b>"+" locked!")
+				msg.setWindowTitle("Character Menu")
+				msg.setWindowIcon(QIcon(dir+'icon.ico'))
+				msg.exec_()
+
+			elif position==0:
+				self.writeToPosition(1,charoffset,charoffset+1,"<B")
+
+				msg = QMessageBox()
+				msg.setIcon(QMessageBox.Information)
+				msg.setText("<b>"+charactername+"</b>"+" unlocked!")
+				msg.setWindowTitle("Character Menu")
+				msg.setWindowIcon(QIcon(dir+'icon.ico'))
+				msg.exec_()
+
+
+	def characterlockunlockall(self,mode): #Modes are "lock" and "unlock"
+		if self.checkforsave():
 			global h
-			h=h[:0x5506dc*2]+gold1+h[0x5506e0*2:]
-			h=h[:0x540290*2]+gold1+h[0x540294*2:] #Obtained Gold record data
-			h=h[:0x540294*2]+goldspentreset+h[0x540298*2:] #Gold Spent record data (set to 0)
-		else:
-			tkMessageBox.showerror(title="ERROR", message="The value is too big!\nMax. value is 9999999")
-			self.txtbx_gold.delete(0,"end")
-			self.txtbx_gold.insert(tk.END,0x98967F)
+			startoffset=0x53FF40	#First character offset (Mario)
+			numberofcharacters=70	#Number of characters (until Incineroar)
+
+			for x in range(0,numberofcharacters+1):
+				position=self.readFromPosition(startoffset,startoffset+1,"<B")
+				if (mode=="lock"):
+					self.writeToPosition(0,startoffset,(startoffset+1),"<B")
+					startoffset+=(8)
+
+				if (mode=="unlock"):
+					self.writeToPosition(1,startoffset,(startoffset+1),"<B")
+					startoffset+=(8)
+
+			msg = QMessageBox()
+			msg.setIcon(QMessageBox.Information)
+			if (mode=="lock"):
+				msg.setText("<b>Locked</b> all characters!")
+			if (mode=="unlock"):
+				msg.setText("<b>Unlocked</b> all characters!")
+			msg.setWindowTitle("Character Menu")
+			msg.setWindowIcon(QIcon(dir+'icon.ico'))
+			msg.exec_()
 
 
-	def checksnacks(self):
-		snacks = int(self.snacks.get())
-		if snacks <= 0xFFFF:
-			tkMessageBox.showinfo(title="OK", message="The value is valid.")
-			snacks1 = binascii.hexlify(struct.pack("<H",snacks))
-			global h
-			h=h[:0x4831CE*2]+snacks1+h[0x4831D0*2:]
-		else:
-			tkMessageBox.showerror(title="ERROR", message="The value is too big!\nMax. value is 65535")
-			self.txtbx_snacks.delete(0,"end")
-			self.txtbx_snacks.insert(tk.END,0xFFFF)
-
-
-	def checksnackm(self):
-		snackm = int(self.snackm.get())
-		if snackm <= 0xFFFF:
-			tkMessageBox.showinfo(title="OK", message="The value is valid.")
-			snackm1 = binascii.hexlify(struct.pack("<H",snackm))
-			global h
-			h=h[:0x4831D0*2]+snackm1+h[0x4831D2*2:]
-		else:
-			tkMessageBox.showerror(title="ERROR", message="The value is too big!\nMax. value is 65535")
-			self.txtbx_snackm.delete(0,"end")
-			self.txtbx_snackm.insert(tk.END,0xFFFF)
-
-
-	def checksnackl(self):
-		snackl = int(self.snackl.get())
-		if snackl <= 0xFFFF:
-			tkMessageBox.showinfo(title="OK", message="The value is valid.")
-			snackl1 = binascii.hexlify(struct.pack("<H",snackl))
-			global h
-			h=h[:0x4831D2*2]+snackl1+h[0x4831D4*2:]
-		else:
-			tkMessageBox.showerror(title="ERROR", message="The value is too big!\nMax. value is 65535")
-			self.txtbx_snackl.delete(0,"end")
-			self.txtbx_snackl.insert(tk.END,0xFFFF)
-
-
-	def checkhammers(self):
-		hammers = int(self.hammers.get())
-		if hammers <= 0xFF:
-			tkMessageBox.showinfo(title="OK", message="The value is valid.")
-			hammers1 = binascii.hexlify(struct.pack("<B",hammers))
-			global h
-			h=h[:0x555E5C*2]+hammers1+h[0x555E5D*2:]
-		else:
-			tkMessageBox.showerror(title="ERROR", message="The value is too big!\nMax. value is 255")
-			self.txtbx_hammers.delete(0,"end")
-			self.txtbx_hammers.insert(tk.END,0xFF)
-
-
-	def checktickets(self):
-		tickets = int(self.tickets.get())
-		if tickets <= 0xFF:
-			tkMessageBox.showinfo(title="OK", message="The value is valid.")
-			tickets1 = binascii.hexlify(struct.pack("<B",tickets))
-			global h
-			h=h[:0x5506CC*2]+tickets1+h[0x5506CD*2:]
-		else:
-			tkMessageBox.showerror(title="ERROR", message="The value is too big!\nMax. value is 99")
-			self.txtbx_tickets.delete(0,"end")
-			self.txtbx_tickets.insert(tk.END,0x63)
-
-
-	def unlockroster(self):
-			fullrosterhex="010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001000000000000000100000000000000010000000000000001"
-			global h
-			h=h[:0x53FF40*2]+fullrosterhex+h[0x540171*2:]
-			tkMessageBox.showinfo(message="Roster unlocked!")
-
-
-	def unlockcores(self):
-			coreshex="0DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000D50000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000BC0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000DA0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000DE0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000960000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000AC0000FF0000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000001000DFF00000000000000000000000001000000000000000000000000000DFF01000000000000000000000000000000010000000000000000000DFF00000000010000000000000000000000000000000100000000000DFF00000000000000000100000000000000000000000000000001000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000C30000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000E20000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000730000000000000000000DFF0000000000000000000000000000000076000000A700000006000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000AD0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000D90000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000E10000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000B80000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000C20000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000BB0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000CA0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000BD0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF0000000000000000000000000000000044000000A800000015000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000BE0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000E30000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000610000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000C40000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000BF0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000A00000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF000000000000000000000000000000006D0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF0000000000000000000000000000000069000000A900000006000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000DB0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFFFFFF03000000E0FFFFFFFEFF0F000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000C90000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF0000000000000000000000000000000071000000AA00000006000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000940000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000E8000000E900000000000DFF00000000000000000000000000000000C50000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000C80000000000000000000DFF00000000000000000000000000000000650000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000AE0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000D60000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF0000000000000000000000000000000043000000880000000F000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000AF0000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000000DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF00000000000000000000000000000000000000000000000000001DFF"
-			global h
-			h=h[:0x426C76*2]+coreshex+h[0x43471C*2:]
-			tkMessageBox.showinfo(message="All cores and stickers added!")
-			
-
-	def unlockspirits(self):
-			spiritshex="010000000000000000000000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000020000000000000000000100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000030000000000000000000200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000040000000000000000000300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000050000000000000000000400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000060000000000000000000500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000070000000000000000000600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000080000000000000000000700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000090000000000000000000800000000000EFF000000000000000000000000000000000000000000000000000000000000000000000A0000000000000000000900000000000EFF000000000000000000000000000000000000000000000000000000000000000000000B0000000000000000000A00000000000EFF000000000000000000000000000000000000000000000000000000000000000000000C0000000000000000000B00000000000EFF000000000000000000000000000000000000000000000000000000000000000000000D0000000000000000000C00000000000EFF000000000000000000000000000000000000000000000000000000000000000000000E0000000000000000000D00000000000EFF000000000000000000000000000000000000000000000000000000000000000000000F0000000000000000000E00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000100000000000000000000F00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000110000000000000000001000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000120000000000000000001100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000130000000000000000001200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000140000000000000000001300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000150000000000000000001400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000160000000000000000001500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000170000000000000000001600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000180000000000000000041700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000190000000000000000001800000000000EFF000000000000000000000000000000000000000000000000000000000000000000001A0000000000000000041900000000000EFF000000000000000000000000000000000000000000000000000000000000000000001B0000000000000000041A00000000000EFF000000000000000000000000000000000000000000000000000000000000000000001C0000000000000000041B00000000000EFF000000000000000000000000000000000000000000000000000000000000000000001D0000000000000000001C00000000000EFF000000000000000000000000000000000000000000000000000000000000000000001E0000000000000000001D00000000000EFF000000000000000000000000000000000000000000000000000000000000000000001F0000000000000000001E00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000200000000000000000001F00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000210000000000000000002000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000220000000000000000002100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000230000000000000000002200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000240000000000000000002300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000250000000000000000002400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000260000000000000000002500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000270000000000000000002600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000280000000000000000002700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000290000000000000000002800000000000EFF000000000000000000000000000000000000000000000000000000000000000000002A0000000000000000002900000000000EFF000000000000000000000000000000000000000000000000000000000000000000002B0000000000000000002A00000000000EFF000000000000000000000000000000000000000000000000000000000000000000002C0000000000000000002B00000000000EFF000000000000000000000000000000000000000000000000000000000000000000002D0000000000000000002C00000000000EFF000000000000000000000000000000000000000000000000000000000000000000002E0000000000000000002D00000000000EFF000000000000000000000000000000000000000000000000000000000000000000002F0000000000000000002E00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000300000000000000000002F00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000310000000000000000003000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000320000000000000000003100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000330000000000000000003200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000340000000000000000003300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000350000000000000000003400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000360000000000000000003500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000370000000000000000003600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000380000000000000000003700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000390000000000000000003800000000000EFF000000000000000000000000000000000000000000000000000000000000000000003A0000000000000000003900000000000EFF000000000000000000000000000000000000000000000000000000000000000000003B0000000000000000003A00000000000EFF000000000000000000000000000000000000000000000000000000000000000000003C0000000000000000003B00000000000EFF000000000000000000000000000000000000000000000000000000000000000000003D0000000000000000003C00000000000EFF000000000000000000000000000000000000000000000000000000000000000000003E0000000000000000003D00000000000EFF000000000000000000000000000000000000000000000000000000000000000000003F0000000000000000003E00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000400000000000000000003F00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000410000000000000000004000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000420000000000000000004100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000430000000000000000004200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000440000000000000000004300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000450000000000000000004400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000460000000000000000004500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000470000000000000000004600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000480000000000000000004700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000490000000000000000004800000000000EFF000000000000000000000000000000000000000000000000000000000000000000004A0000000000000000004900000000000EFF000000000000000000000000000000000000000000000000000000000000000000004B0000000000000000004A00000000000EFF000000000000000000000000000000000000000000000000000000000000000000004C0000000000000000004B00000000000EFF000000000000000000000000000000000000000000000000000000000000000000004D0000000000000000004C00000000000EFF000000000000000000000000000000000000000000000000000000000000000000004E0000000000000000004D00000000000EFF000000000000000000000000000000000000000000000000000000000000000000004F0000000000000000004E00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000500000000000000000004F00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000510000000000000000005000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000520000000000000000005100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000530000000000000000005200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000540000000000000000005300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000550000000000000000005400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000560000000000000000005500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000570000000000000000005600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000580000000000000000005700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000590000000000000000005800000000000EFF000000000000000000000000000000000000000000000000000000000000000000005A0000000000000000005900000000000EFF000000000000000000000000000000000000000000000000000000000000000000005B0000000000000000005A00000000000EFF000000000000000000000000000000000000000000000000000000000000000000005C0000000000000000005B00000000000EFF000000000000000000000000000000000000000000000000000000000000000000005D0000000000000000005C00000000000EFF000000000000000000000000000000000000000000000000000000000000000000005E0000000000000000005D00000000000EFF000000000000000000000000000000000000000000000000000000000000000000005F0000000000000000005E00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000600000000000000000005F00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000610000000000000000006000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000620000000000000000006100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000630000000000000000006200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000640000000000000000006300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000650000000000000000006400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000660000000000000000006500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000670000000000000000006600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000680000000000000000006700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000690000000000000000006800000000000EFF000000000000000000000000000000000000000000000000000000000000000000006A0000000000000000006900000000000EFF000000000000000000000000000000000000000000000000000000000000000000006B0000000000000000006A00000000000EFF000000000000000000000000000000000000000000000000000000000000000000006C0000000000000000006B00000000000EFF000000000000000000000000000000000000000000000000000000000000000000006D0000000000000000006C00000000000EFF000000000000000000000000000000000000000000000000000000000000000000006E0000000000000000006D00000000000EFF000000000000000000000000000000000000000000000000000000000000000000006F0000000000000000006E00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000700000000000000000006F00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000710000000000000000007000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000720000000000000000007100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000730000000000000000007200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000740000000000000000007300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000750000000000000000007400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000760000000000000000007500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000770000000000000000007600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000780000000000000000007700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000790000000000000000007800000000000EFF000000000000000000000000000000000000000000000000000000000000000000007A0000000000000000007900000000000EFF000000000000000000000000000000000000000000000000000000000000000000007B0000000000000000007A00000000000EFF000000000000000000000000000000000000000000000000000000000000000000007C0000000000000000007B00000000000EFF000000000000000000000000000000000000000000000000000000000000000000007D0000000000000000007C00000000000EFF000000000000000000000000000000000000000000000000000000000000000000007E0000000000000000007D00000000000EFF000000000000000000000000000000000000000000000000000000000000000000007F0000000000000000007E00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000800000000000000000007F00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000810000000000000000008000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000820000000000000000008100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000830000000000000000008200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000840000000000000000008300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000850000000000000000008400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000860000000000000000008500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000870000000000000000008600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000880000000000000000008700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000890000000000000000008800000000000EFF000000000000000000000000000000000000000000000000000000000000000000008A0000000000000000008900000000000EFF000000000000000000000000000000000000000000000000000000000000000000008B0000000000000000008A00000000000EFF000000000000000000000000000000000000000000000000000000000000000000008C0000000000000000008B00000000000EFF000000000000000000000000000000000000000000000000000000000000000000008D0000000000000000008C00000000000EFF000000000000000000000000000000000000000000000000000000000000000000008E0000000000000000008D00000000000EFF000000000000000000000000000000000000000000000000000000000000000000008F0000000000000000008E00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000900000000000000000008F00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000910000000000000000009000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000920000000000000000009100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000930000000000000000009200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000940000000000000000009300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000950000000000000000009400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000960000000000000000009500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000970000000000000000009600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000980000000000000000009700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000990000000000000000009800000000000EFF000000000000000000000000000000000000000000000000000000000000000000009A0000000000000000009900000000000EFF000000000000000000000000000000000000000000000000000000000000000000009B0000000000000000009A00000000000EFF000000000000000000000000000000000000000000000000000000000000000000009C0000000000000000009B00000000000EFF000000000000000000000000000000000000000000000000000000000000000000009D0000000000000000009C00000000000EFF000000000000000000000000000000000000000000000000000000000000000000009E0000000000000000009D00000000000EFF000000000000000000000000000000000000000000000000000000000000000000009F0000000000000000009E00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A00000000000000000009F00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A1000000000000000000A000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A2000000000000000000A100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A3000000000000000000A200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A4000000000000000000A300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A5000000000000000000A400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A6000000000000000000A500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A7000000000000000000A600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A8000000000000000000A700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A9000000000000000000A800000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AA000000000000000000A900000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AB000000000000000000AA00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AC000000000000000000AB00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AD000000000000000000AC00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AE000000000000000000AD00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AF000000000000000000AE00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B0000000000000000000AF00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B1000000000000000000B000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B2000000000000000000B100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B3000000000000000000B200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B4000000000000000000B300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B5000000000000000000B400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B6000000000000000000B500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B7000000000000000000B600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B8000000000000000000B700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B9000000000000000000B800000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BA000000000000000000B900000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BB000000000000000000BA00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BC000000000000000000BB00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BD000000000000000000BC00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BE000000000000000000BD00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BF000000000000000000BE00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C0000000000000000000BF00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C1000000000000000000C000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C2000000000000000000C100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C3000000000000000000C200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C4000000000000000000C300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C5000000000000000000C400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C6000000000000000000C500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C7000000000000000000C600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C8000000000000000000C700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C9000000000000000000C800000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CA000000000000000000C900000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CB000000000000000000CA00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CC000000000000000000CB00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CD000000000000000000CC00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CE000000000000000000CD00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CF000000000000000000CE00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D0000000000000000000CF00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D1000000000000000000D000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D2000000000000000000D100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D3000000000000000000D200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D4000000000000000000D300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D5000000000000000000D400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D6000000000000000000D500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D7000000000000000000D600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D8000000000000000000D700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D9000000000000000000D800000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DA000000000000000000D900000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DB000000000000000000DA00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DC000000000000000000DB00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DD000000000000000000DC00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DE000000000000000000DD00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DF000000000000000000DE00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E0000000000000000000DF00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E1000000000000000000E000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E2000000000000000000E100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E3000000000000000000E200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E4000000000000000000E300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E5000000000000000000E400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E6000000000000000000E500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E7000000000000000000E600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E8000000000000000000E700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E9000000000000000000E800000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EA000000000000000000E900000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EB000000000000000000EA00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EC000000000000000000EB00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000ED000000000000000000EC00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EE000000000000000000ED00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EF000000000000000000EE00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F0000000000000000000EF00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F1000000000000000000F000000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F2000000000000000000F100000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F3000000000000000000F200000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F4000000000000000000F300000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F5000000000000000000F400000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F6000000000000000000F500000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F7000000000000000000F600000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F8000000000000000000F700000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F9000000000000000000F800000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FA000000000000000000F900000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FB000000000000000000FA00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FC000000000000000000FB00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FD000000000000000000FC00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FE000000000000000000FD00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FF000000000000000000FE00000000000EFF0000000000000000000000000000000000000000000000000000000000000000000000010000000000000000FF00000000000EFF00000000000000000000000000000000000000000000000000000000000000000000010100000000000000000001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000020100000000000000000101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000030100000000000000000201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000040100000000000000000301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000050100000000000000000401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000060100000000000000000501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000070100000000000000000601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000080100000000000000000701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000090100000000000000000801000000000EFF000000000000000000000000000000000000000000000000000000000000000000000A0100000000000000000901000000000EFF000000000000000000000000000000000000000000000000000000000000000000000B0100000000000000000A01000000000EFF000000000000000000000000000000000000000000000000000000000000000000000C0100000000000000000B01000000000EFF000000000000000000000000000000000000000000000000000000000000000000000D0100000000000000000C01000000000EFF000000000000000000000000000000000000000000000000000000000000000000000E0100000000000000000D01000000000EFF000000000000000000000000000000000000000000000000000000000000000000000F0100000000000000000E01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000100100000000000000000F01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000110100000000000000001001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000120100000000000000001101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000130100000000000000001201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000140100000000000000001301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000150100000000000000001401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000160100000000000000001501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000170100000000000000001601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000180100000000000000001701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000190100000000000000001801000000000EFF000000000000000000000000000000000000000000000000000000000000000000001A0100000000000000001901000000000EFF000000000000000000000000000000000000000000000000000000000000000000001B0100000000000000001A01000000000EFF000000000000000000000000000000000000000000000000000000000000000000001C0100000000000000001B01000000000EFF000000000000000000000000000000000000000000000000000000000000000000001D0100000000000000001C01000000000EFF000000000000000000000000000000000000000000000000000000000000000000001E0100000000000000001D01000000000EFF000000000000000000000000000000000000000000000000000000000000000000001F0100000000000000001E01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000200100000000000000001F01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000210100000000000000002001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000220100000000000000002101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000230100000000000000002201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000240100000000000000002301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000250100000000000000002401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000260100000000000000002501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000270100000000000000002601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000280100000000000000002701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000290100000000000000002801000000000EFF000000000000000000000000000000000000000000000000000000000000000000002A0100000000000000002901000000000EFF000000000000000000000000000000000000000000000000000000000000000000002B0100000000000000002A01000000000EFF000000000000000000000000000000000000000000000000000000000000000000002C0100000000000000002B01000000000EFF000000000000000000000000000000000000000000000000000000000000000000002D0100000000000000002C01000000000EFF000000000000000000000000000000000000000000000000000000000000000000002E0100000000000000002D01000000000EFF000000000000000000000000000000000000000000000000000000000000000000002F0100000000000000002E01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000300100000000000000002F01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000310100000000000000003001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000320100000000000000003101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000330100000000000000003201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000340100000000000000003301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000350100000000000000003401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000360100000000000000003501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000370100000000000000003601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000380100000000000000003701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000390100000000000000003801000000000EFF000000000000000000000000000000000000000000000000000000000000000000003A0100000000000000003901000000000EFF000000000000000000000000000000000000000000000000000000000000000000003B0100000000000000003A01000000000EFF000000000000000000000000000000000000000000000000000000000000000000003C0100000000000000003B01000000000EFF000000000000000000000000000000000000000000000000000000000000000000003D0100000000000000003C01000000000EFF000000000000000000000000000000000000000000000000000000000000000000003E0100000000000000003D01000000000EFF000000000000000000000000000000000000000000000000000000000000000000003F0100000000000000003E01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000400100000000000000003F01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000410100000000000000004001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000420100000000000000004101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000430100000000000000004201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000440100000000000000004301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000450100000000000000004401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000460100000000000000004501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000470100000000000000004601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000480100000000000000004701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000490100000000000000004801000000000EFF000000000000000000000000000000000000000000000000000000000000000000004A0100000000000000004901000000000EFF000000000000000000000000000000000000000000000000000000000000000000004B0100000000000000004A01000000000EFF000000000000000000000000000000000000000000000000000000000000000000004C0100000000000000004B01000000000EFF000000000000000000000000000000000000000000000000000000000000000000004D0100000000000000004C01000000000EFF000000000000000000000000000000000000000000000000000000000000000000004E0100000000000000004D01000000000EFF000000000000000000000000000000000000000000000000000000000000000000004F0100000000000000004E01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000500100000000000000004F01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000510100000000000000005001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000520100000000000000005101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000530100000000000000005201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000540100000000000000005301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000550100000000000000005401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000560100000000000000005501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000570100000000000000005601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000580100000000000000005701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000590100000000000000005801000000000EFF000000000000000000000000000000000000000000000000000000000000000000005A0100000000000000005901000000000EFF000000000000000000000000000000000000000000000000000000000000000000005B0100000000000000005A01000000000EFF000000000000000000000000000000000000000000000000000000000000000000005C0100000000000000005B01000000000EFF000000000000000000000000000000000000000000000000000000000000000000005D0100000000000000005C01000000000EFF000000000000000000000000000000000000000000000000000000000000000000005E0100000000000000005D01000000000EFF000000000000000000000000000000000000000000000000000000000000000000005F0100000000000000005E01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000600100000000000000005F01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000610100000000000000006001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000620100000000000000006101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000630100000000000000006201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000640100000000000000006301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000650100000000000000006401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000660100000000000000006501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000670100000000000000006601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000680100000000000000006701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000690100000000000000006801000000000EFF000000000000000000000000000000000000000000000000000000000000000000006A0100000000000000006901000000000EFF000000000000000000000000000000000000000000000000000000000000000000006B0100000000000000006A01000000000EFF000000000000000000000000000000000000000000000000000000000000000000006C0100000000000000006B01000000000EFF000000000000000000000000000000000000000000000000000000000000000000006D0100000000000000006C01000000000EFF000000000000000000000000000000000000000000000000000000000000000000006E0100000000000000006D01000000000EFF000000000000000000000000000000000000000000000000000000000000000000006F0100000000000000006E01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000700100000000000000006F01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000710100000000000000007001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000720100000000000000007101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000730100000000000000007201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000740100000000000000007301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000750100000000000000007401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000760100000000000000007501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000770100000000000000007601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000780100000000000000007701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000790100000000000000007801000000000EFF000000000000000000000000000000000000000000000000000000000000000000007A0100000000000000007901000000000EFF000000000000000000000000000000000000000000000000000000000000000000007B0100000000000000007A01000000000EFF000000000000000000000000000000000000000000000000000000000000000000007C0100000000000000007B01000000000EFF000000000000000000000000000000000000000000000000000000000000000000007D0100000000000000007C01000000000EFF000000000000000000000000000000000000000000000000000000000000000000007E0100000000000000007D01000000000EFF000000000000000000000000000000000000000000000000000000000000000000007F0100000000000000007E01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000800100000000000000007F01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000810100000000000000008001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000820100000000000000008101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000830100000000000000008201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000840100000000000000008301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000850100000000000000008401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000860100000000000000008501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000870100000000000000008601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000880100000000000000008701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000890100000000000000008801000000000EFF000000000000000000000000000000000000000000000000000000000000000000008A0100000000000000008901000000000EFF000000000000000000000000000000000000000000000000000000000000000000008B0100000000000000008A01000000000EFF000000000000000000000000000000000000000000000000000000000000000000008C0100000000000000008B01000000000EFF000000000000000000000000000000000000000000000000000000000000000000008D0100000000000000008C01000000000EFF000000000000000000000000000000000000000000000000000000000000000000008E0100000000000000008D01000000000EFF000000000000000000000000000000000000000000000000000000000000000000008F0100000000000000008E01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000900100000000000000008F01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000910100000000000000009001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000920100000000000000009101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000930100000000000000009201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000940100000000000000009301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000950100000000000000009401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000960100000000000000009501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000970100000000000000009601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000980100000000000000009701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000990100000000000000009801000000000EFF000000000000000000000000000000000000000000000000000000000000000000009A0100000000000000009901000000000EFF000000000000000000000000000000000000000000000000000000000000000000009B0100000000000000009A01000000000EFF000000000000000000000000000000000000000000000000000000000000000000009C0100000000000000009B01000000000EFF000000000000000000000000000000000000000000000000000000000000000000009D0100000000000000009C01000000000EFF000000000000000000000000000000000000000000000000000000000000000000009E0100000000000000009D01000000000EFF000000000000000000000000000000000000000000000000000000000000000000009F0100000000000000009E01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A00100000000000000009F01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A1010000000000000000A001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A2010000000000000000A101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A3010000000000000000A201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A4010000000000000000A301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A5010000000000000000A401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A6010000000000000000A501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A7010000000000000000A601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A8010000000000000000A701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A9010000000000000000A801000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AA010000000000000000A901000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AB010000000000000000AA01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AC010000000000000000AB01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AD010000000000000000AC01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AE010000000000000000AD01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AF010000000000000000AE01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B0010000000000000000AF01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B1010000000000000000B001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B2010000000000000000B101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B3010000000000000000B201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B4010000000000000000B301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B5010000000000000000B401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B6010000000000000000B501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B7010000000000000000B601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B8010000000000000000B701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B9010000000000000000B801000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BA010000000000000000B901000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BB010000000000000000BA01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BC010000000000000000BB01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BD010000000000000000BC01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BE010000000000000000BD01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BF010000000000000000BE01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C0010000000000000000BF01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C1010000000000000000C001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C2010000000000000000C101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C3010000000000000000C201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C4010000000000000000C301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C5010000000000000000C401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C6010000000000000000C501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C7010000000000000000C601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C8010000000000000000C701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C9010000000000000000C801000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CA010000000000000000C901000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CB010000000000000000CA01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CC010000000000000000CB01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CD010000000000000000CC01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CE010000000000000000CD01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CF010000000000000000CE01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D0010000000000000000CF01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D1010000000000000000D001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D2010000000000000000D101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D3010000000000000000D201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D4010000000000000000D301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D5010000000000000000D401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D6010000000000000000D501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D7010000000000000000D601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D8010000000000000000D701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D9010000000000000000D801000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DA010000000000000000D901000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DB010000000000000000DA01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DC010000000000000000DB01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DD010000000000000000DC01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DE010000000000000000DD01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DF010000000000000000DE01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E0010000000000000000DF01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E1010000000000000000E001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E2010000000000000000E101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E3010000000000000000E201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E4010000000000000000E301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E5010000000000000000E401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E6010000000000000000E501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E7010000000000000000E601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E8010000000000000000E701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E9010000000000000000E801000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EA010000000000000000E901000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EB010000000000000000EA01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EC010000000000000000EB01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000ED010000000000000000EC01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EE010000000000000000ED01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EF010000000000000000EE01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F0010000000000000000EF01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F1010000000000000000F001000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F2010000000000000000F101000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F3010000000000000000F201000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F4010000000000000000F301000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F5010000000000000000F401000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F6010000000000000000F501000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F7010000000000000000F601000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F8010000000000000000F701000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F9010000000000000000F801000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FA010000000000000000F901000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FB010000000000000000FA01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FC010000000000000000FB01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FD010000000000000000FC01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FE010000000000000000FD01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FF010000000000000000FE01000000000EFF0000000000000000000000000000000000000000000000000000000000000000000000020000000000000000FF01000000000EFF00000000000000000000000000000000000000000000000000000000000000000000010200000000000000000002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000020200000000000000000102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000030200000000000000000202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000040200000000000000000302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000050200000000000000000402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000060200000000000000000502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000070200000000000000000602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000080200000000000000000702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000090200000000000000000802000000000EFF000000000000000000000000000000000000000000000000000000000000000000000A0200000000000000000902000000000EFF000000000000000000000000000000000000000000000000000000000000000000000B0200000000000000000A02000000000EFF000000000000000000000000000000000000000000000000000000000000000000000C0200000000000000000B02000000000EFF000000000000000000000000000000000000000000000000000000000000000000000D0200000000000000000C02000000000EFF000000000000000000000000000000000000000000000000000000000000000000000E0200000000000000000D02000000000EFF000000000000000000000000000000000000000000000000000000000000000000000F0200000000000000000E02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000100200000000000000000F02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000110200000000000000001002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000120200000000000000001102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000130200000000000000001202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000140200000000000000001302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000150200000000000000001402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000160200000000000000001502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000170200000000000000001602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000180200000000000000001702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000190200000000000000001802000000000EFF000000000000000000000000000000000000000000000000000000000000000000001A0200000000000000001902000000000EFF000000000000000000000000000000000000000000000000000000000000000000001B0200000000000000001A02000000000EFF000000000000000000000000000000000000000000000000000000000000000000001C0200000000000000001B02000000000EFF000000000000000000000000000000000000000000000000000000000000000000001D0200000000000000001C02000000000EFF000000000000000000000000000000000000000000000000000000000000000000001E0200000000000000001D02000000000EFF000000000000000000000000000000000000000000000000000000000000000000001F0200000000000000001E02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000200200000000000000001F02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000210200000000000000002002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000220200000000000000002102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000230200000000000000002202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000240200000000000000002302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000250200000000000000002402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000260200000000000000002502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000270200000000000000002602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000280200000000000000002702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000290200000000000000002802000000000EFF000000000000000000000000000000000000000000000000000000000000000000002A0200000000000000002902000000000EFF000000000000000000000000000000000000000000000000000000000000000000002B0200000000000000002A02000000000EFF000000000000000000000000000000000000000000000000000000000000000000002C0200000000000000002B02000000000EFF000000000000000000000000000000000000000000000000000000000000000000002D0200000000000000002C02000000000EFF000000000000000000000000000000000000000000000000000000000000000000002E0200000000000000002D02000000000EFF000000000000000000000000000000000000000000000000000000000000000000002F0200000000000000002E02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000300200000000000000002F02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000310200000000000000003002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000320200000000000000003102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000330200000000000000003202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000340200000000000000003302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000350200000000000000003402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000360200000000000000003502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000370200000000000000003602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000380200000000000000003702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000390200000000000000003802000000000EFF000000000000000000000000000000000000000000000000000000000000000000003A0200000000000000003902000000000EFF000000000000000000000000000000000000000000000000000000000000000000003B0200000000000000003A02000000000EFF000000000000000000000000000000000000000000000000000000000000000000003C0200000000000000003B02000000000EFF000000000000000000000000000000000000000000000000000000000000000000003D0200000000000000003C02000000000EFF000000000000000000000000000000000000000000000000000000000000000000003E0200000000000000003D02000000000EFF000000000000000000000000000000000000000000000000000000000000000000003F0200000000000000003E02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000400200000000000000003F02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000410200000000000000004002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000420200000000000000004102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000430200000000000000004202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000440200000000000000004302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000450200000000000000004402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000460200000000000000004502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000470200000000000000004602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000480200000000000000004702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000490200000000000000004802000000000EFF000000000000000000000000000000000000000000000000000000000000000000004A0200000000000000004902000000000EFF000000000000000000000000000000000000000000000000000000000000000000004B0200000000000000004A02000000000EFF000000000000000000000000000000000000000000000000000000000000000000004C0200000000000000004B02000000000EFF000000000000000000000000000000000000000000000000000000000000000000004D0200000000000000004C02000000000EFF000000000000000000000000000000000000000000000000000000000000000000004E0200000000000000004D02000000000EFF000000000000000000000000000000000000000000000000000000000000000000004F0200000000000000004E02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000500200000000000000004F02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000510200000000000000005002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000520200000000000000005102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000530200000000000000005202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000540200000000000000005302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000550200000000000000005402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000560200000000000000005502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000570200000000000000005602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000580200000000000000005702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000590200000000000000005802000000000EFF000000000000000000000000000000000000000000000000000000000000000000005A0200000000000000005902000000000EFF000000000000000000000000000000000000000000000000000000000000000000005B0200000000000000005A02000000000EFF000000000000000000000000000000000000000000000000000000000000000000005C0200000000000000005B02000000000EFF000000000000000000000000000000000000000000000000000000000000000000005D0200000000000000005C02000000000EFF000000000000000000000000000000000000000000000000000000000000000000005E0200000000000000005D02000000000EFF000000000000000000000000000000000000000000000000000000000000000000005F0200000000000000005E02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000600200000000000000005F02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000610200000000000000006002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000620200000000000000006102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000630200000000000000006202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000640200000000000000006302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000650200000000000000006402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000660200000000000000006502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000670200000000000000006602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000680200000000000000006702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000690200000000000000006802000000000EFF000000000000000000000000000000000000000000000000000000000000000000006A0200000000000000006902000000000EFF000000000000000000000000000000000000000000000000000000000000000000006B0200000000000000006A02000000000EFF000000000000000000000000000000000000000000000000000000000000000000006C0200000000000000006B02000000000EFF000000000000000000000000000000000000000000000000000000000000000000006D0200000000000000006C02000000000EFF000000000000000000000000000000000000000000000000000000000000000000006E0200000000000000006D02000000000EFF000000000000000000000000000000000000000000000000000000000000000000006F0200000000000000006E02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000700200000000000000006F02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000710200000000000000007002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000720200000000000000007102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000730200000000000000007202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000740200000000000000007302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000750200000000000000007402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000760200000000000000007502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000770200000000000000007602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000780200000000000000007702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000790200000000000000007802000000000EFF000000000000000000000000000000000000000000000000000000000000000000007A0200000000000000007902000000000EFF000000000000000000000000000000000000000000000000000000000000000000007B0200000000000000007A02000000000EFF000000000000000000000000000000000000000000000000000000000000000000007C0200000000000000007B02000000000EFF000000000000000000000000000000000000000000000000000000000000000000007D0200000000000000007C02000000000EFF000000000000000000000000000000000000000000000000000000000000000000007E0200000000000000007D02000000000EFF000000000000000000000000000000000000000000000000000000000000000000007F0200000000000000007E02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000800200000000000000007F02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000810200000000000000008002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000820200000000000000008102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000830200000000000000008202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000840200000000000000008302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000850200000000000000008402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000860200000000000000008502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000870200000000000000008602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000880200000000000000008702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000890200000000000000008802000000000EFF000000000000000000000000000000000000000000000000000000000000000000008A0200000000000000008902000000000EFF000000000000000000000000000000000000000000000000000000000000000000008B0200000000000000008A02000000000EFF000000000000000000000000000000000000000000000000000000000000000000008C0200000000000000008B02000000000EFF000000000000000000000000000000000000000000000000000000000000000000008D0200000000000000008C02000000000EFF000000000000000000000000000000000000000000000000000000000000000000008E0200000000000000008D02000000000EFF000000000000000000000000000000000000000000000000000000000000000000008F0200000000000000008E02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000900200000000000000008F02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000910200000000000000009002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000920200000000000000009102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000930200000000000000009202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000940200000000000000009302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000950200000000000000009402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000960200000000000000009502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000970200000000000000009602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000980200000000000000009702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000990200000000000000009802000000000EFF000000000000000000000000000000000000000000000000000000000000000000009A0200000000000000009902000000000EFF000000000000000000000000000000000000000000000000000000000000000000009B0200000000000000009A02000000000EFF000000000000000000000000000000000000000000000000000000000000000000009C0200000000000000009B02000000000EFF000000000000000000000000000000000000000000000000000000000000000000009D0200000000000000009C02000000000EFF000000000000000000000000000000000000000000000000000000000000000000009E0200000000000000009D02000000000EFF000000000000000000000000000000000000000000000000000000000000000000009F0200000000000000009E02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A00200000000000000009F02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A1020000000000000000A002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A2020000000000000000A102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A3020000000000000000A202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A4020000000000000000A302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A5020000000000000000A402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A6020000000000000000A502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A7020000000000000000A602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A8020000000000000000A702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A9020000000000000000A802000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AA020000000000000000A902000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AB020000000000000000AA02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AC020000000000000000AB02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AD020000000000000000AC02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AE020000000000000000AD02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AF020000000000000000AE02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B0020000000000000000AF02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B1020000000000000000B002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B2020000000000000000B102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B3020000000000000000B202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B4020000000000000000B302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B5020000000000000000B402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B6020000000000000000B502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B7020000000000000000B602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B8020000000000000000B702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B9020000000000000000B802000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BA020000000000000000B902000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BB020000000000000000BA02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BC020000000000000000BB02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BD020000000000000000BC02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BE020000000000000000BD02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BF020000000000000000BE02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C0020000000000000000BF02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C1020000000000000000C002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C2020000000000000000C102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C3020000000000000000C202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C4020000000000000000C302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C5020000000000000000C402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C6020000000000000000C502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C7020000000000000000C602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C8020000000000000000C702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C9020000000000000000C802000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CA020000000000000000C902000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CB020000000000000000CA02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CC020000000000000000CB02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CD020000000000000000CC02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CE020000000000000000CD02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CF020000000000000000CE02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D0020000000000000000CF02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D1020000000000000000D002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D2020000000000000000D102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D3020000000000000000D202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D4020000000000000000D302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D5020000000000000000D402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D6020000000000000000D502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D7020000000000000000D602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D8020000000000000000D702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D9020000000000000000D802000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DA020000000000000000D902000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DB020000000000000000DA02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DC020000000000000000DB02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DD020000000000000000DC02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DE020000000000000000DD02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DF020000000000000000DE02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E0020000000000000000DF02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E1020000000000000000E002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E2020000000000000000E102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E3020000000000000000E202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E4020000000000000000E302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E5020000000000000000E402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E6020000000000000000E502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E7020000000000000000E602A45900000EFF00000000000000000000000000000000000000000000000000000000000000000000E8020000000000000000E702925900000EFF00000000000000000000000000000000000000000000000000000000000000000000E9020000000000000000E802000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EA020000000000000000E902000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EB020000000000000000EA02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EC020000000000000000EB029F8100000EFF00000000000000000000000000000000000000000000000000000000000000000000ED020000000000000000EC02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EE020000000000000000ED02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EF020000000000000000EE02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F0020000000000000000EF02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F1020000000000000000F002000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F2020000000000000000F102000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F3020000000000000000F202000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F4020000000000000000F302000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F5020000000000000000F402000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F6020000000000000000F502000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F7020000000000000000F602000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F8020000000000000000F702000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F9020000000000000000F802000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FA020000000000000000F9029F8100000EFF00000000000000000000000000000000000000000000000000000000000000000000FB020000000000000000FA024C8100000EFF00000000000000000000000000000000000000000000000000000000000000000000FC020000000000000000FB024C8100000EFF00000000000000000000000000000000000000000000000000000000000000000000FD020000000000000000FC02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FE020000000000000000FD02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FF020000000000000000FE02000000000EFF0000000000000000000000000000000000000000000000000000000000000000000000030000000000000000FF02000000000EFF00000000000000000000000000000000000000000000000000000000000000000000010300000000000000000003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000020300000000000000000103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000030300000000000000000203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000040300000000000000000303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000050300000000000000000403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000060300000000000000000503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000070300000000000000000603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000080300000000000000000703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000090300000000000000000803000000000EFF000000000000000000000000000000000000000000000000000000000000000000000A0300000000000000000903000000000EFF000000000000000000000000000000000000000000000000000000000000000000000B0300000000000000000A03000000000EFF000000000000000000000000000000000000000000000000000000000000000000000C0300000000000000000B03000000000EFF000000000000000000000000000000000000000000000000000000000000000000000D0300000000000000000C03000000000EFF000000000000000000000000000000000000000000000000000000000000000000000E0300000000000000000D03000000000EFF000000000000000000000000000000000000000000000000000000000000000000000F0300000000000000000E03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000100300000000000000000F03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000110300000000000000001003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000120300000000000000001103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000130300000000000000001203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000140300000000000000001303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000150300000000000000001403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000160300000000000000001503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000170300000000000000001603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000180300000000000000001703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000190300000000000000001803000000000EFF000000000000000000000000000000000000000000000000000000000000000000001A0300000000000000001903000000000EFF000000000000000000000000000000000000000000000000000000000000000000001B0300000000000000001A03000000000EFF000000000000000000000000000000000000000000000000000000000000000000001C0300000000000000001B03000000000EFF000000000000000000000000000000000000000000000000000000000000000000001D0300000000000000001C03000000000EFF000000000000000000000000000000000000000000000000000000000000000000001E0300000000000000001D03000000000EFF000000000000000000000000000000000000000000000000000000000000000000001F0300000000000000001E03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000200300000000000000001F03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000210300000000000000002003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000220300000000000000002103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000230300000000000000002203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000240300000000000000002303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000250300000000000000002403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000260300000000000000002503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000270300000000000000002603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000280300000000000000002703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000290300000000000000002803000000000EFF000000000000000000000000000000000000000000000000000000000000000000002A0300000000000000002903000000000EFF000000000000000000000000000000000000000000000000000000000000000000002B0300000000000000002A03000000000EFF000000000000000000000000000000000000000000000000000000000000000000002C0300000000000000002B03000000000EFF000000000000000000000000000000000000000000000000000000000000000000002D0300000000000000002C03000000000EFF000000000000000000000000000000000000000000000000000000000000000000002E0300000000000000002D03000000000EFF000000000000000000000000000000000000000000000000000000000000000000002F0300000000000000002E03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000300300000000000000002F03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000310300000000000000003003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000320300000000000000003103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000330300000000000000003203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000340300000000000000003303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000350300000000000000003403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000360300000000000000003503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000370300000000000000003603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000380300000000000000003703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000390300000000000000003803000000000EFF000000000000000000000000000000000000000000000000000000000000000000003A0300000000000000003903000000000EFF000000000000000000000000000000000000000000000000000000000000000000003B0300000000000000003A03000000000EFF000000000000000000000000000000000000000000000000000000000000000000003C0300000000000000003B03000000000EFF000000000000000000000000000000000000000000000000000000000000000000003D0300000000000000003C03000000000EFF000000000000000000000000000000000000000000000000000000000000000000003E0300000000000000003D03000000000EFF000000000000000000000000000000000000000000000000000000000000000000003F0300000000000000003E03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000400300000000000000003F03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000410300000000000000004003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000420300000000000000004103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000430300000000000000004203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000440300000000000000004303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000450300000000000000004403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000460300000000000000004503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000470300000000000000004603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000480300000000000000004703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000490300000000000000004803000000000EFF000000000000000000000000000000000000000000000000000000000000000000004A0300000000000000004903000000000EFF000000000000000000000000000000000000000000000000000000000000000000004B0300000000000000004A03000000000EFF000000000000000000000000000000000000000000000000000000000000000000004C0300000000000000004B03000000000EFF000000000000000000000000000000000000000000000000000000000000000000004D0300000000000000004C03000000000EFF000000000000000000000000000000000000000000000000000000000000000000004E0300000000000000004D03000000000EFF000000000000000000000000000000000000000000000000000000000000000000004F0300000000000000004E03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000500300000000000000004F03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000510300000000000000005003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000520300000000000000005103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000530300000000000000005203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000540300000000000000005303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000550300000000000000005403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000560300000000000000005503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000570300000000000000005603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000580300000000000000005703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000590300000000000000005803000000000EFF000000000000000000000000000000000000000000000000000000000000000000005A0300000000000000005903000000000EFF000000000000000000000000000000000000000000000000000000000000000000005B0300000000000000005A03000000000EFF000000000000000000000000000000000000000000000000000000000000000000005C0300000000000000005B03000000000EFF000000000000000000000000000000000000000000000000000000000000000000005D0300000000000000005C03000000000EFF000000000000000000000000000000000000000000000000000000000000000000005E0300000000000000005D03000000000EFF000000000000000000000000000000000000000000000000000000000000000000005F0300000000000000005E03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000600300000000000000005F03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000610300000000000000006003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000620300000000000000006103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000630300000000000000006203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000640300000000000000006303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000650300000000000000006403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000660300000000000000006503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000670300000000000000006603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000680300000000000000006703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000690300000000000000006803000000000EFF000000000000000000000000000000000000000000000000000000000000000000006A0300000000000000006903000000000EFF000000000000000000000000000000000000000000000000000000000000000000006B0300000000000000006A03000000000EFF000000000000000000000000000000000000000000000000000000000000000000006C0300000000000000006B03000000000EFF000000000000000000000000000000000000000000000000000000000000000000006D0300000000000000006C03000000000EFF000000000000000000000000000000000000000000000000000000000000000000006E0300000000000000006D03000000000EFF000000000000000000000000000000000000000000000000000000000000000000006F0300000000000000006E03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000700300000000000000006F03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000710300000000000000007003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000720300000000000000007103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000730300000000000000007203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000740300000000000000007303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000750300000000000000007403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000760300000000000000007503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000770300000000000000007603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000780300000000000000007703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000790300000000000000007803000000000EFF000000000000000000000000000000000000000000000000000000000000000000007A0300000000000000007903000000000EFF000000000000000000000000000000000000000000000000000000000000000000007B0300000000000000007A03000000000EFF000000000000000000000000000000000000000000000000000000000000000000007C0300000000000000007B03000000000EFF000000000000000000000000000000000000000000000000000000000000000000007D0300000000000000007C03000000000EFF000000000000000000000000000000000000000000000000000000000000000000007E0300000000000000007D03000000000EFF000000000000000000000000000000000000000000000000000000000000000000007F0300000000000000007E03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000800300000000000000007F03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000810300000000000000008003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000820300000000000000008103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000830300000000000000008203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000840300000000000000008303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000850300000000000000008403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000860300000000000000008503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000870300000000000000008603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000880300000000000000008703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000890300000000000000008803000000000EFF000000000000000000000000000000000000000000000000000000000000000000008A0300000000000000008903000000000EFF000000000000000000000000000000000000000000000000000000000000000000008B0300000000000000008A03000000000EFF000000000000000000000000000000000000000000000000000000000000000000008C0300000000000000008B03000000000EFF000000000000000000000000000000000000000000000000000000000000000000008D0300000000000000008C03000000000EFF000000000000000000000000000000000000000000000000000000000000000000008E0300000000000000008D03000000000EFF000000000000000000000000000000000000000000000000000000000000000000008F0300000000000000008E03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000900300000000000000008F03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000910300000000000000009003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000920300000000000000009103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000930300000000000000009203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000940300000000000000009303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000950300000000000000009403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000960300000000000000009503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000970300000000000000009603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000980300000000000000009703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000990300000000000000009803000000000EFF000000000000000000000000000000000000000000000000000000000000000000009A0300000000000000009903000000000EFF000000000000000000000000000000000000000000000000000000000000000000009B0300000000000000009A03000000000EFF000000000000000000000000000000000000000000000000000000000000000000009C0300000000000000009B03000000000EFF000000000000000000000000000000000000000000000000000000000000000000009D0300000000000000009C03000000000EFF000000000000000000000000000000000000000000000000000000000000000000009E0300000000000000009D03000000000EFF000000000000000000000000000000000000000000000000000000000000000000009F0300000000000000009E03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A00300000000000000009F03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A1030000000000000000A003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A2030000000000000000A103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A3030000000000000000A203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A4030000000000000000A303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A5030000000000000000A403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A6030000000000000000A503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A7030000000000000000A603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A8030000000000000000A703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A9030000000000000000A803000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AA030000000000000000A903000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AB030000000000000000AA03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AC030000000000000000AB03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AD030000000000000000AC03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AE030000000000000000AD03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AF030000000000000000AE03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B0030000000000000000AF03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B1030000000000000000B003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B2030000000000000000B103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B3030000000000000000B203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B4030000000000000000B303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B5030000000000000000B403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B6030000000000000000B503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B7030000000000000000B603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B8030000000000000000B703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B9030000000000000000B803000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BA030000000000000000B903000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BB030000000000000000BA03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BC030000000000000000BB03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BD030000000000000000BC03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BE030000000000000000BD03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BF030000000000000000BE03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C0030000000000000000BF03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C1030000000000000000C003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C2030000000000000000C103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C3030000000000000000C203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C4030000000000000000C303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C5030000000000000000C403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C6030000000000000000C503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C7030000000000000000C603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C8030000000000000000C703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C9030000000000000000C803000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CA030000000000000000C903000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CB030000000000000000CA03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CC030000000000000000CB03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CD030000000000000000CC03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CE030000000000000000CD03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CF030000000000000000CE03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D0030000000000000000CF03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D1030000000000000000D003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D2030000000000000000D103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D3030000000000000000D203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D4030000000000000000D303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D5030000000000000000D403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D6030000000000000000D503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D7030000000000000000D603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D8030000000000000000D703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D9030000000000000000D803000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DA030000000000000000D903000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DB030000000000000000DA03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DC030000000000000000DB03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DD030000000000000000DC03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DE030000000000000000DD03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DF030000000000000000DE03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E0030000000000000000DF03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E1030000000000000000E003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E2030000000000000000E103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E3030000000000000000E203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E4030000000000000000E303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E5030000000000000000E403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E6030000000000000000E503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E7030000000000000000E603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E8030000000000000000E703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E9030000000000000000E803000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EA030000000000000000E903000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EB030000000000000000EA03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EC030000000000000000EB03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000ED030000000000000000EC03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EE030000000000000000ED03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EF030000000000000000EE03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F0030000000000000000EF03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F1030000000000000000F003000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F2030000000000000000F103000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F3030000000000000000F203000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F4030000000000000000F303000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F5030000000000000000F403000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F6030000000000000000F503000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F7030000000000000000F603000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F8030000000000000000F703000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F9030000000000000000F803000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FA030000000000000000F903000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FB030000000000000000FA03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FC030000000000000000FB03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FD030000000000000000FC03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FE030000000000000000FD03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FF030000000000000000FE03000000000EFF0000000000000000000000000000000000000000000000000000000000000000000000040000000000000000FF03000000000EFF00000000000000000000000000000000000000000000000000000000000000000000010400000000000000000004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000020400000000000000000104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000030400000000000000000204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000040400000000000000000304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000050400000000000000000404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000060400000000000000000504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000070400000000000000000604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000080400000000000000000704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000090400000000000000000804000000000EFF000000000000000000000000000000000000000000000000000000000000000000000A0400000000000000000904000000000EFF000000000000000000000000000000000000000000000000000000000000000000000B0400000000000000000A04000000000EFF000000000000000000000000000000000000000000000000000000000000000000000C0400000000000000000B04000000000EFF000000000000000000000000000000000000000000000000000000000000000000000D0400000000000000000C04000000000EFF000000000000000000000000000000000000000000000000000000000000000000000E0400000000000000000D04000000000EFF000000000000000000000000000000000000000000000000000000000000000000000F0400000000000000000E04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000100400000000000000000F04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000110400000000000000001004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000120400000000000000001104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000130400000000000000001204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000140400000000000000001304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000150400000000000000001404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000160400000000000000001504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000170400000000000000001604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000180400000000000000001704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000190400000000000000001804000000000EFF000000000000000000000000000000000000000000000000000000000000000000001A0400000000000000001904000000000EFF000000000000000000000000000000000000000000000000000000000000000000001B0400000000000000001A04000000000EFF000000000000000000000000000000000000000000000000000000000000000000001C0400000000000000001B04000000000EFF000000000000000000000000000000000000000000000000000000000000000000001D0400000000000000001C04000000000EFF000000000000000000000000000000000000000000000000000000000000000000001E0400000000000000001D04000000000EFF000000000000000000000000000000000000000000000000000000000000000000001F0400000000000000001E04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000200400000000000000001F04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000210400000000000000002004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000220400000000000000002104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000230400000000000000002204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000240400000000000000002304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000250400000000000000002404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000260400000000000000002504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000270400000000000000002604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000280400000000000000002704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000290400000000000000002804000000000EFF000000000000000000000000000000000000000000000000000000000000000000002A0400000000000000002904000000000EFF000000000000000000000000000000000000000000000000000000000000000000002B0400000000000000002A04000000000EFF000000000000000000000000000000000000000000000000000000000000000000002C0400000000000000002B04000000000EFF000000000000000000000000000000000000000000000000000000000000000000002D0400000000000000002C04000000000EFF000000000000000000000000000000000000000000000000000000000000000000002E0400000000000000002D04000000000EFF000000000000000000000000000000000000000000000000000000000000000000002F0400000000000000002E04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000300400000000000000002F04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000310400000000000000003004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000320400000000000000003104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000330400000000000000003204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000340400000000000000003304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000350400000000000000003404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000360400000000000000003504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000370400000000000000003604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000380400000000000000003704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000390400000000000000003804000000000EFF000000000000000000000000000000000000000000000000000000000000000000003A0400000000000000003904000000000EFF000000000000000000000000000000000000000000000000000000000000000000003B0400000000000000003A04000000000EFF000000000000000000000000000000000000000000000000000000000000000000003C0400000000000000003B04000000000EFF000000000000000000000000000000000000000000000000000000000000000000003D0400000000000000003C04000000000EFF000000000000000000000000000000000000000000000000000000000000000000003E0400000000000000003D04000000000EFF000000000000000000000000000000000000000000000000000000000000000000003F0400000000000000003E04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000400400000000000000003F04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000410400000000000000004004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000420400000000000000004104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000430400000000000000004204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000440400000000000000004304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000450400000000000000004404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000460400000000000000004504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000470400000000000000004604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000480400000000000000004704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000490400000000000000004804000000000EFF000000000000000000000000000000000000000000000000000000000000000000004A0400000000000000004904000000000EFF000000000000000000000000000000000000000000000000000000000000000000004B0400000000000000004A04000000000EFF000000000000000000000000000000000000000000000000000000000000000000004C0400000000000000004B04000000000EFF000000000000000000000000000000000000000000000000000000000000000000004D0400000000000000004C04000000000EFF000000000000000000000000000000000000000000000000000000000000000000004E0400000000000000004D04000000000EFF000000000000000000000000000000000000000000000000000000000000000000004F0400000000000000004E04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000500400000000000000004F04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000510400000000000000005004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000520400000000000000005104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000530400000000000000005204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000540400000000000000005304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000550400000000000000005404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000560400000000000000005504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000570400000000000000005604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000580400000000000000005704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000590400000000000000005804000000000EFF000000000000000000000000000000000000000000000000000000000000000000005A0400000000000000005904000000000EFF000000000000000000000000000000000000000000000000000000000000000000005B0400000000000000005A04000000000EFF000000000000000000000000000000000000000000000000000000000000000000005C0400000000000000005B04000000000EFF000000000000000000000000000000000000000000000000000000000000000000005D0400000000000000005C04000000000EFF000000000000000000000000000000000000000000000000000000000000000000005E0400000000000000005D04000000000EFF000000000000000000000000000000000000000000000000000000000000000000005F0400000000000000005E04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000600400000000000000005F04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000610400000000000000006004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000620400000000000000006104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000630400000000000000006204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000640400000000000000006304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000650400000000000000006404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000660400000000000000006504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000670400000000000000006604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000680400000000000000006704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000690400000000000000006804000000000EFF000000000000000000000000000000000000000000000000000000000000000000006A0400000000000000006904000000000EFF000000000000000000000000000000000000000000000000000000000000000000006B0400000000000000006A04000000000EFF000000000000000000000000000000000000000000000000000000000000000000006C0400000000000000006B04000000000EFF000000000000000000000000000000000000000000000000000000000000000000006D0400000000000000006C04000000000EFF000000000000000000000000000000000000000000000000000000000000000000006E0400000000000000006D04000000000EFF000000000000000000000000000000000000000000000000000000000000000000006F0400000000000000006E04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000700400000000000000006F04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000710400000000000000007004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000720400000000000000007104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000730400000000000000007204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000740400000000000000007304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000750400000000000000007404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000760400000000000000007504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000770400000000000000007604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000780400000000000000007704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000790400000000000000007804000000000EFF000000000000000000000000000000000000000000000000000000000000000000007A0400000000000000007904000000000EFF000000000000000000000000000000000000000000000000000000000000000000007B0400000000000000007A04000000000EFF000000000000000000000000000000000000000000000000000000000000000000007C0400000000000000007B04000000000EFF000000000000000000000000000000000000000000000000000000000000000000007D0400000000000000007C04000000000EFF000000000000000000000000000000000000000000000000000000000000000000007E0400000000000000007D04000000000EFF000000000000000000000000000000000000000000000000000000000000000000007F0400000000000000007E04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000800400000000000000007F04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000810400000000000000008004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000820400000000000000008104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000830400000000000000008204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000840400000000000000008304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000850400000000000000008404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000860400000000000000008504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000870400000000000000008604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000880400000000000000008704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000890400000000000000008804000000000EFF000000000000000000000000000000000000000000000000000000000000000000008A0400000000000000008904000000000EFF000000000000000000000000000000000000000000000000000000000000000000008B0400000000000000008A04000000000EFF000000000000000000000000000000000000000000000000000000000000000000008C0400000000000000008B04000000000EFF000000000000000000000000000000000000000000000000000000000000000000008D0400000000000000008C04000000000EFF000000000000000000000000000000000000000000000000000000000000000000008E0400000000000000008D04000000000EFF000000000000000000000000000000000000000000000000000000000000000000008F0400000000000000008E04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000900400000000000000008F04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000910400000000000000009004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000920400000000000000009104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000930400000000000000009204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000940400000000000000009304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000950400000000000000009404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000960400000000000000009504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000970400000000000000009604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000980400000000000000009704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000990400000000000000009804000000000EFF000000000000000000000000000000000000000000000000000000000000000000009A0400000000000000009904000000000EFF000000000000000000000000000000000000000000000000000000000000000000009B0400000000000000009A04000000000EFF000000000000000000000000000000000000000000000000000000000000000000009C0400000000000000009B04000000000EFF000000000000000000000000000000000000000000000000000000000000000000009D0400000000000000009C04000000000EFF000000000000000000000000000000000000000000000000000000000000000000009E0400000000000000009D04000000000EFF000000000000000000000000000000000000000000000000000000000000000000009F0400000000000000009E04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A00400000000000000009F04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A1040000000000000000A004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A2040000000000000000A104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A3040000000000000000A204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A4040000000000000000A304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A5040000000000000000A404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A6040000000000000000A504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A7040000000000000000A604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A8040000000000000000A704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000A9040000000000000000A804000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AA040000000000000000A904000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AB040000000000000000AA04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AC040000000000000000AB04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AD040000000000000000AC04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AE040000000000000000AD04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000AF040000000000000000AE04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B0040000000000000000AF04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B1040000000000000000B004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B2040000000000000000B104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B3040000000000000000B204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B4040000000000000000B304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B5040000000000000000B404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B6040000000000000000B504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B7040000000000000000B604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B8040000000000000000B704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000B9040000000000000000B804000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BA040000000000000000B904000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BB040000000000000000BA04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BC040000000000000000BB04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BD040000000000000000BC04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BE040000000000000000BD04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000BF040000000000000000BE04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C0040000000000000000BF04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C1040000000000000000C004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C2040000000000000000C104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C3040000000000000000C204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C4040000000000000000C304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C5040000000000000000C404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C6040000000000000000C504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C7040000000000000000C604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C8040000000000000000C704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000C9040000000000000000C804000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CA040000000000000000C904000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CB040000000000000000CA04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CC040000000000000000CB04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CD040000000000000000CC04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CE040000000000000000CD04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000CF040000000000000000CE04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D0040000000000000000CF04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D1040000000000000000D004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D2040000000000000000D104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D3040000000000000000D204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D4040000000000000000D304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D5040000000000000000D404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D6040000000000000000D504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D7040000000000000000D604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D8040000000000000000D704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000D9040000000000000000D804000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DA040000000000000000D904000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DB040000000000000000DA04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DC040000000000000000DB04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DD040000000000000000DC04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DE040000000000000000DD04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000DF040000000000000000DE04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E0040000000000000000DF04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E1040000000000000000E004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E2040000000000000000E104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E3040000000000000000E204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E4040000000000000000E304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E5040000000000000000E404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E6040000000000000000E504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E7040000000000000000E604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E8040000000000000000E704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000E9040000000000000000E804000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EA040000000000000000E904000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EB040000000000000000EA04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EC040000000000000000EB04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000ED040000000000000000EC04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EE040000000000000000ED04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000EF040000000000000000EE04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F0040000000000000000EF04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F1040000000000000000F004000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F2040000000000000000F104000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F3040000000000000000F204000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F4040000000000000000F304000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F5040000000000000000F404000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F6040000000000000000F504000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F7040000000000000000F604000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F8040000000000000000F704000000000EFF00000000000000000000000000000000000000000000000000000000000000000000F9040000000000000000F804000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FA040000000000000000F904000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FB040000000000000000FA04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FC040000000000000000FB04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FD040000000000000000FC04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FE040000000000000000FD04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000FF040000000000000000FE04000000000EFF0000000000000000000000000000000000000000000000000000000000000000000000050000000000000000FF04000000000EFF00000000000000000000000000000000000000000000000000000000000000000000010500000000000000000005000000000EFF00000000000000000000000000000000000000000000000000000000000000000000020500000000000000000105000000000EFF00000000000000000000000000000000000000000000000000000000000000000000030500000000000000000205000000000EFF00000000000000000000000000000000000000000000000000000000000000000000040500000000000000000305000000000EFF00000000000000000000000000000000000000000000000000000000000000000000050500000000000000000405000000000EFF00000000000000000000000000000000000000000000000000000000000000000000060500000000000000000505000000000EFF00000000000000000000000000000000000000000000000000000000000000000000070500000000000000000605000000000EFF00000000000000000000000000000000000000000000000000000000000000000000080500000000000000000705000000000EFF00000000000000000000000000000000000000000000000000000000000000000000090500000000000000000805000000000EFF000000000000000000000000000000000000000000000000000000000000000000000A0500000000000000000905000000000EFF000000000000000000000000000000000000000000000000000000000000000000000B0500000000000000000A05000000000EFF000000000000000000000000000000000000000000000000000000000000000000000C0500000000000000000B05000000000EFF000000000000000000000000000000000000000000000000000000000000000000000D0500000000000000000C05000000000EFF000000000000000000000000000000000000000000000000000000000000000000000E0500000000000000000D05000000000EFF000000000000000000000000000000000000000000000000000000000000000000000F0500000000000000000E05000000000EFF00000000000000000000000000000000000000000000000000000000000000000000100500000000000000000F05000000000EFF00000000000000000000000000000000000000000000000000000000000000000000110500000000000000001005000000000EFF"
-			global h
-			h=h[:0x434750*2]+spiritshex+h[0x444EA2*2:]
-			tkMessageBox.showinfo(message="All spirits added!")
-
-			
-	def lockallcharacters(self):
-			emptyrosterhex="000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-			global h
-			global charwindow
-			h=h[:0x53FF40*2]+emptyrosterhex+h[0x540171*2:]
-			tkMessageBox.showinfo(parent=charwindow, message="Locked all characters!")
-			
-	
-	def unlockmilestones(self):
-			milestonehex="FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
-			global h
-			h=h[:0x555BB8*2]+milestonehex+h[0x555BE8*2:]
-			tkMessageBox.showinfo(message="Unlocked all 124 milestones!")
-			
-			
-	def storesexploregymdojomusic(self):
-			storesexploregymdojomusichex="FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
-			global h
-			h=h[:0xD4*2]+storesexploregymdojomusichex+h[0x378*2:]
-			tkMessageBox.showinfo(message="Unlocked all Stores, Exploration, Gyms, Dojos and Music!")
-			
-	
 	def unlockmiiclothes(self):
-			miiclotheshex="FFFFFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF"
-			global h
-			h=h[:0x20*2]+miiclotheshex+h[0x60*2:]
-			tkMessageBox.showinfo(message="Unlocked all Mii clothes!")
-			
-			
-	def spiritboard(self):
-			spiritboardhex="32000000A50000000000000000000000010000000600000000000000000000000600000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FFFF0000000000000000000009000000EE00000001000000030000000100000004000000010000000400000001000000030000000100000002000000060000002B0500000A000000DF0300001200000021050000060000005700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000005000000020000000B000000000000000000000001000000040000000000000000000000000000000000000000000000000000001400000019030000060000009000000000000000000000000100000015000000050000002F00000006000000800000000200000012000000020000003A000000000000000000000000000000000000000A000000620000000300000004000000030000001E0100000300000011000000000000000000000006000000410000000100000012000000050000000500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A00000000000000010000000000000000000000000000000000000000000000000000000000000003000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002"
-			global h
-			h=h[:0x555CC0*2]+spiritboardhex+h[0x5560E5*2:]
-			tkMessageBox.showinfo(message="Spirit Board is now full size!")
-			
-			
-	def characters(self):
-		global charwindow
-		charwindow=tk.Toplevel(gui)
-		charwindow.title("Character Menu")
-		charwindow.geometry("900x545")
-		charwindow.iconbitmap("icon.ico")
-		
-		####################################
-		mario = tk.PhotoImage(file="img/mario.gif")
-		btn_mario = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF40))
-		btn_mario.config(image=mario)
-		btn_mario.image=mario
-		btn_mario.grid(row="0", column="1")
-		####################################
-		dk = tk.PhotoImage(file="img/dk.gif")
-		btn_dk = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF48))
-		btn_dk.config(image=dk)
-		btn_dk.image=dk
-		btn_dk.grid(row="0", column="2")
-		####################################
-		link = tk.PhotoImage(file="img/link.gif")
-		btn_link = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF50))
-		btn_link.config(image=link)
-		btn_link.image=link
-		btn_link.grid(row="0", column="3")
-		####################################
-		samus = tk.PhotoImage(file="img/samus.gif")
-		btn_samus = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF58))
-		btn_samus.config(image=samus)
-		btn_samus.image=samus
-		btn_samus.grid(row="0", column="4")
-		####################################
-		darksamus = tk.PhotoImage(file="img/darksamus.gif")
-		btn_darksamus = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF60))
-		btn_darksamus.config(image=darksamus)
-		btn_darksamus.image=darksamus
-		btn_darksamus.grid(row="0", column="5")
-		####################################
-		yoshi = tk.PhotoImage(file="img/yoshi.gif")
-		btn_yoshi = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF68))
-		btn_yoshi.config(image=yoshi)
-		btn_yoshi.image=yoshi
-		btn_yoshi.grid(row="0", column="6")
-		####################################
-		kirby = tk.PhotoImage(file="img/kirby.gif")
-		btn_kirby = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF70))
-		btn_kirby.config(image=kirby)
-		btn_kirby.image=kirby
-		btn_kirby.grid(row="0", column="7")
-		####################################
-		fox = tk.PhotoImage(file="img/fox.gif")
-		btn_fox = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF78))
-		btn_fox.config(image=fox)
-		btn_fox.image=fox
-		btn_fox.grid(row="0", column="8")
-		####################################
-		pikachu = tk.PhotoImage(file="img/pikachu.gif")
-		btn_pikachu = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF80))
-		btn_pikachu.config(image=pikachu)
-		btn_pikachu.image=pikachu
-		btn_pikachu.grid(row="0", column="9")
-		####################################
-		luigi = tk.PhotoImage(file="img/luigi.gif")
-		btn_luigi = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF88))
-		btn_luigi.config(image=luigi)
-		btn_luigi.image=luigi
-		btn_luigi.grid(row="1", column="1")
-		####################################
-		ness = tk.PhotoImage(file="img/ness.gif")
-		btn_ness = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF90))
-		btn_ness.config(image=ness)
-		btn_ness.image=ness
-		btn_ness.grid(row="1", column="2")
-		####################################
-		captainfalcon = tk.PhotoImage(file="img/captainfalcon.gif")
-		btn_captainfalcon = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FF98))
-		btn_captainfalcon.config(image=captainfalcon)
-		btn_captainfalcon.image=captainfalcon
-		btn_captainfalcon.grid(row="1", column="3")
-		####################################
-		jigglypuff = tk.PhotoImage(file="img/jigglypuff.gif")
-		btn_jigglypuff = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFA0))
-		btn_jigglypuff.config(image=jigglypuff)
-		btn_jigglypuff.image=jigglypuff
-		btn_jigglypuff.grid(row="1", column="4")
-		####################################
-		peach = tk.PhotoImage(file="img/peach.gif")
-		btn_peach = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFA8))
-		btn_peach.config(image=peach)
-		btn_peach.image=peach
-		btn_peach.grid(row="1", column="5")
-		####################################
-		daisy = tk.PhotoImage(file="img/daisy.gif")
-		btn_daisy = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFB0))
-		btn_daisy.config(image=daisy)
-		btn_daisy.image=daisy
-		btn_daisy.grid(row="1", column="6")
-		####################################
-		bowser = tk.PhotoImage(file="img/bowser.gif")
-		btn_bowser = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFB8))
-		btn_bowser.config(image=bowser)
-		btn_bowser.image=bowser
-		btn_bowser.grid(row="1", column="7")
-		####################################
-		iceclimbers = tk.PhotoImage(file="img/iceclimbers.gif")
-		btn_iceclimbers = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFC0))
-		btn_iceclimbers.config(image=iceclimbers)
-		btn_iceclimbers.image=iceclimbers
-		btn_iceclimbers.grid(row="1", column="8")
-		####################################
-		sheik = tk.PhotoImage(file="img/sheik.gif")
-		btn_sheik = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFC8))
-		btn_sheik.config(image=sheik)
-		btn_sheik.image=sheik
-		btn_sheik.grid(row="1", column="9")
-		####################################
-		zelda = tk.PhotoImage(file="img/zelda.gif")
-		btn_zelda = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFD0))
-		btn_zelda.config(image=zelda)
-		btn_zelda.image=zelda
-		btn_zelda.grid(row="2", column="1")
-		####################################
-		drmario = tk.PhotoImage(file="img/drmario.gif")
-		btn_drmario = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFD8))
-		btn_drmario.config(image=drmario)
-		btn_drmario.image=drmario
-		btn_drmario.grid(row="2", column="2")
-		####################################
-		pichu = tk.PhotoImage(file="img/pichu.gif")
-		btn_pichu = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFE0))
-		btn_pichu.config(image=pichu)
-		btn_pichu.image=pichu
-		btn_pichu.grid(row="2", column="3")
-		####################################
-		falco = tk.PhotoImage(file="img/falco.gif")
-		btn_falco = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFE8))
-		btn_falco.config(image=falco)
-		btn_falco.image=falco
-		btn_falco.grid(row="2", column="4")
-		####################################
-		marth = tk.PhotoImage(file="img/marth.gif")
-		btn_marth = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFF0))
-		btn_marth.config(image=marth)
-		btn_marth.image=marth
-		btn_marth.grid(row="2", column="5")
-		####################################
-		lucina = tk.PhotoImage(file="img/lucina.gif")
-		btn_lucina = tk.Button(charwindow, command=lambda : self.characterwrite(0x53FFF8))
-		btn_lucina.config(image=lucina)
-		btn_lucina.image=lucina
-		btn_lucina.grid(row="2", column="6")
-		####################################
-		younglink = tk.PhotoImage(file="img/younglink.gif")
-		btn_younglink = tk.Button(charwindow, command=lambda : self.characterwrite(0x54000))
-		btn_younglink.config(image=younglink)
-		btn_younglink.image=younglink
-		btn_younglink.grid(row="2", column="7")
-		####################################
-		ganondorf = tk.PhotoImage(file="img/ganondorf.gif")
-		btn_ganondorf = tk.Button(charwindow, command=lambda : self.characterwrite(0x54008))
-		btn_ganondorf.config(image=ganondorf)
-		btn_ganondorf.image=ganondorf
-		btn_ganondorf.grid(row="2", column="8")
-		####################################
-		mewtwo = tk.PhotoImage(file="img/mewtwo.gif")
-		btn_mewtwo = tk.Button(charwindow, command=lambda : self.characterwrite(0x540010))
-		btn_mewtwo.config(image=mewtwo)
-		btn_mewtwo.image=mewtwo
-		btn_mewtwo.grid(row="2", column="9")
-		####################################
-		roy = tk.PhotoImage(file="img/roy.gif")
-		btn_roy = tk.Button(charwindow, command=lambda : self.characterwrite(0x540018))
-		btn_roy.config(image=roy)
-		btn_roy.image=roy
-		btn_roy.grid(row="3", column="1")
-		####################################
-		chrom = tk.PhotoImage(file="img/chrom.gif")
-		btn_chrom = tk.Button(charwindow, command=lambda : self.characterwrite(0x540020))
-		btn_chrom.config(image=chrom)
-		btn_chrom.image=chrom
-		btn_chrom.grid(row="3", column="2")
-		####################################
-		mrgameandwatch = tk.PhotoImage(file="img/mrgameandwatch.gif")
-		btn_mrgameandwatch = tk.Button(charwindow, command=lambda : self.characterwrite(0x540028))
-		btn_mrgameandwatch.config(image=mrgameandwatch)
-		btn_mrgameandwatch.image=mrgameandwatch
-		btn_mrgameandwatch.grid(row="3", column="3")
-		####################################
-		metaknight = tk.PhotoImage(file="img/metaknight.gif")
-		btn_metaknight = tk.Button(charwindow, command=lambda : self.characterwrite(0x540030))
-		btn_metaknight.config(image=metaknight)
-		btn_metaknight.image=metaknight
-		btn_metaknight.grid(row="3", column="4")
-		####################################
-		pit = tk.PhotoImage(file="img/pit.gif")
-		btn_pit = tk.Button(charwindow, command=lambda : self.characterwrite(0x540038))
-		btn_pit.config(image=pit)
-		btn_pit.image=pit
-		btn_pit.grid(row="3", column="5")
-		####################################
-		darkpit = tk.PhotoImage(file="img/darkpit.gif")
-		btn_darkpit = tk.Button(charwindow, command=lambda : self.characterwrite(0x540040))
-		btn_darkpit.config(image=darkpit)
-		btn_darkpit.image=darkpit
-		btn_darkpit.grid(row="3", column="6")
-		####################################
-		zerosuitsamus = tk.PhotoImage(file="img/zerosuitsamus.gif")
-		btn_zerosuitsamus = tk.Button(charwindow, command=lambda : self.characterwrite(0x540048))
-		btn_zerosuitsamus.config(image=zerosuitsamus)
-		btn_zerosuitsamus.image=zerosuitsamus
-		btn_zerosuitsamus.grid(row="3", column="7")
-		####################################
-		wario = tk.PhotoImage(file="img/wario.gif")
-		btn_wario = tk.Button(charwindow, command=lambda : self.characterwrite(0x540050))
-		btn_wario.config(image=wario)
-		btn_wario.image=wario
-		btn_wario.grid(row="3", column="8")
-		####################################
-		snake = tk.PhotoImage(file="img/snake.gif")
-		btn_snake = tk.Button(charwindow, command=lambda : self.characterwrite(0x540058))
-		btn_snake.config(image=snake)
-		btn_snake.image=snake
-		btn_snake.grid(row="3", column="9")
-		####################################
-		ike = tk.PhotoImage(file="img/ike.gif")
-		btn_ike = tk.Button(charwindow, command=lambda : self.characterwrite(0x540060))
-		btn_ike.config(image=ike)
-		btn_ike.image=ike
-		btn_ike.grid(row="4", column="1")
-		####################################
-		pokemontrainer = tk.PhotoImage(file="img/pokemontrainer.gif")
-		btn_pokemontrainer = tk.Button(charwindow, command=lambda : self.characterwrite(0x540068))
-		btn_pokemontrainer.config(image=pokemontrainer)
-		btn_pokemontrainer.image=pokemontrainer
-		btn_pokemontrainer.grid(row="4", column="2")
-		####################################
-		diddykong = tk.PhotoImage(file="img/diddykong.gif")
-		btn_diddykong = tk.Button(charwindow, command=lambda : self.characterwrite(0x540070))
-		btn_diddykong.config(image=diddykong)
-		btn_diddykong.image=diddykong
-		btn_diddykong.grid(row="4", column="3")
-		####################################
-		lucas = tk.PhotoImage(file="img/lucas.gif")
-		btn_lucas = tk.Button(charwindow, command=lambda : self.characterwrite(0x540078))
-		btn_lucas.config(image=lucas)
-		btn_lucas.image=lucas
-		btn_lucas.grid(row="4", column="4")
-		####################################
-		sonic = tk.PhotoImage(file="img/sonic.gif")
-		btn_sonic = tk.Button(charwindow, command=lambda : self.characterwrite(0x540080))
-		btn_sonic.config(image=sonic)
-		btn_sonic.image=sonic
-		btn_sonic.grid(row="4", column="5")
-		####################################
-		kingdedede = tk.PhotoImage(file="img/kingdedede.gif")
-		btn_kingdedede = tk.Button(charwindow, command=lambda : self.characterwrite(0x540088))
-		btn_kingdedede.config(image=kingdedede)
-		btn_kingdedede.image=kingdedede
-		btn_kingdedede.grid(row="4", column="6")
-		####################################
-		olimar = tk.PhotoImage(file="img/olimar.gif")
-		btn_olimar = tk.Button(charwindow, command=lambda : self.characterwrite(0x540090))
-		btn_olimar.config(image=olimar)
-		btn_olimar.image=olimar
-		btn_olimar.grid(row="4", column="7")
-		####################################
-		lucario = tk.PhotoImage(file="img/lucario.gif")
-		btn_lucario = tk.Button(charwindow, command=lambda : self.characterwrite(0x540098))
-		btn_lucario.config(image=lucario)
-		btn_lucario.image=lucario
-		btn_lucario.grid(row="4", column="8")
-		####################################
-		rob = tk.PhotoImage(file="img/rob.gif")
-		btn_rob = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400A0))
-		btn_rob.config(image=rob)
-		btn_rob.image=rob
-		btn_rob.grid(row="4", column="9")
-		####################################
-		toonlink = tk.PhotoImage(file="img/toonlink.gif")
-		btn_toonlink = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400A8))
-		btn_toonlink.config(image=toonlink)
-		btn_toonlink.image=toonlink
-		btn_toonlink.grid(row="5", column="1")
-		####################################
-		wolf = tk.PhotoImage(file="img/wolf.gif")
-		btn_wolf = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400B0))
-		btn_wolf.config(image=wolf)
-		btn_wolf.image=wolf
-		btn_wolf.grid(row="5", column="2")
-		####################################
-		villager = tk.PhotoImage(file="img/villager.gif")
-		btn_villager = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400B8))
-		btn_villager.config(image=villager)
-		btn_villager.image=villager
-		btn_villager.grid(row="5", column="3")
-		####################################
-		megaman = tk.PhotoImage(file="img/megaman.gif")
-		btn_megaman = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400C0))
-		btn_megaman.config(image=megaman)
-		btn_megaman.image=megaman
-		btn_megaman.grid(row="5", column="4")
-		####################################
-		wiifittrainer = tk.PhotoImage(file="img/wiifittrainer.gif")
-		btn_wiifittrainer = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400C8))
-		btn_wiifittrainer.config(image=wiifittrainer)
-		btn_wiifittrainer.image=wiifittrainer
-		btn_wiifittrainer.grid(row="5", column="5")
-		####################################
-		rosalinaandluma = tk.PhotoImage(file="img/rosalinaandluma.gif")
-		btn_rosalinaandluma = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400D0))
-		btn_rosalinaandluma.config(image=rosalinaandluma)
-		btn_rosalinaandluma.image=rosalinaandluma
-		btn_rosalinaandluma.grid(row="5", column="6")
-		####################################
-		littlemac = tk.PhotoImage(file="img/littlemac.gif")
-		btn_littlemac = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400D8))
-		btn_littlemac.config(image=littlemac)
-		btn_littlemac.image=littlemac
-		btn_littlemac.grid(row="5", column="7")
-		####################################
-		greninja = tk.PhotoImage(file="img/greninja.gif")
-		btn_greninja = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400E0))
-		btn_greninja.config(image=greninja)
-		btn_greninja.image=greninja
-		btn_greninja.grid(row="5", column="8")
-		####################################
-		palutena = tk.PhotoImage(file="img/palutena.gif")
-		btn_palutena = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400E8))
-		btn_palutena.config(image=palutena)
-		btn_palutena.image=palutena
-		btn_palutena.grid(row="5", column="9")
-		####################################
-		pacman = tk.PhotoImage(file="img/pacman.gif")
-		btn_pacman = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400F0))
-		btn_pacman.config(image=pacman)
-		btn_pacman.image=pacman
-		btn_pacman.grid(row="6", column="1")
-		####################################
-		robin = tk.PhotoImage(file="img/robin.gif")
-		btn_robin = tk.Button(charwindow, command=lambda : self.characterwrite(0x5400F8))
-		btn_robin.config(image=robin)
-		btn_robin.image=robin
-		btn_robin.grid(row="6", column="2")
-		####################################
-		shulk = tk.PhotoImage(file="img/shulk.gif")
-		btn_shulk = tk.Button(charwindow, command=lambda : self.characterwrite(0x540100))
-		btn_shulk.config(image=shulk)
-		btn_shulk.image=shulk
-		btn_shulk.grid(row="6", column="3")
-		####################################
-		bowserjr = tk.PhotoImage(file="img/bowserjr.gif")
-		btn_bowserjr = tk.Button(charwindow, command=lambda : self.characterwrite(0x540108))
-		btn_bowserjr.config(image=bowserjr)
-		btn_bowserjr.image=bowserjr
-		btn_bowserjr.grid(row="6", column="4")
-		####################################
-		duckhuntduo = tk.PhotoImage(file="img/duckhuntduo.gif")
-		btn_duckhuntduo = tk.Button(charwindow, command=lambda : self.characterwrite(0x540110))
-		btn_duckhuntduo.config(image=duckhuntduo)
-		btn_duckhuntduo.image=duckhuntduo
-		btn_duckhuntduo.grid(row="6", column="5")
-		####################################
-		ryu = tk.PhotoImage(file="img/ryu.gif")
-		btn_ryu = tk.Button(charwindow, command=lambda : self.characterwrite(0x540118))
-		btn_ryu.config(image=ryu)
-		btn_ryu.image=ryu
-		btn_ryu.grid(row="6", column="6")
-		####################################
-		ken = tk.PhotoImage(file="img/ken.gif")
-		btn_ken = tk.Button(charwindow, command=lambda : self.characterwrite(0x540120))
-		btn_ken.config(image=ken)
-		btn_ken.image=ken
-		btn_ken.grid(row="6", column="7")
-		####################################
-		cloud = tk.PhotoImage(file="img/cloud.gif")
-		btn_cloud = tk.Button(charwindow, command=lambda : self.characterwrite(0x540128))
-		btn_cloud.config(image=cloud)
-		btn_cloud.image=cloud
-		btn_cloud.grid(row="6", column="8")
-		####################################
-		corrin = tk.PhotoImage(file="img/corrin.gif")
-		btn_corrin = tk.Button(charwindow, command=lambda : self.characterwrite(0x540130))
-		btn_corrin.config(image=corrin)
-		btn_corrin.image=corrin
-		btn_corrin.grid(row="6", column="9")
-		####################################
-		bayonetta = tk.PhotoImage(file="img/bayonetta.gif")
-		btn_bayonetta = tk.Button(charwindow, command=lambda : self.characterwrite(0x540138))
-		btn_bayonetta.config(image=bayonetta)
-		btn_bayonetta.image=bayonetta
-		btn_bayonetta.grid(row="7", column="1")
-		####################################
-		inkling = tk.PhotoImage(file="img/inkling.gif")
-		btn_inkling = tk.Button(charwindow, command=lambda : self.characterwrite(0x540140))
-		btn_inkling.config(image=inkling)
-		btn_inkling.image=inkling
-		btn_inkling.grid(row="7", column="2")
-		####################################
-		ridley = tk.PhotoImage(file="img/ridley.gif")
-		btn_ridley = tk.Button(charwindow, command=lambda : self.characterwrite(0x540148))
-		btn_ridley.config(image=ridley)
-		btn_ridley.image=ridley
-		btn_ridley.grid(row="7", column="3")
-		####################################
-		simon = tk.PhotoImage(file="img/simon.gif")
-		btn_simon = tk.Button(charwindow, command=lambda : self.characterwrite(0x540150))
-		btn_simon.config(image=simon)
-		btn_simon.image=simon
-		btn_simon.grid(row="7", column="4")
-		####################################
-		richter = tk.PhotoImage(file="img/richter.gif")
-		btn_richter = tk.Button(charwindow, command=lambda : self.characterwrite(0x540158))
-		btn_richter.config(image=richter)
-		btn_richter.image=richter
-		btn_richter.grid(row="7", column="5")
-		####################################
-		kingkrool = tk.PhotoImage(file="img/kingkrool.gif")
-		btn_kingkrool = tk.Button(charwindow, command=lambda : self.characterwrite(0x540160))
-		btn_kingkrool.config(image=kingkrool)
-		btn_kingkrool.image=kingkrool
-		btn_kingkrool.grid(row="7", column="6")
-			####################################
-		isabelle = tk.PhotoImage(file="img/isabelle.gif")
-		btn_isabelle = tk.Button(charwindow, command=lambda : self.characterwrite(0x540168))
-		btn_isabelle.config(image=isabelle)
-		btn_isabelle.image=isabelle
-		btn_isabelle.grid(row="7", column="7")
-		####################################
-		incineroar = tk.PhotoImage(file="img/incineroar.gif")
-		btn_incineroar = tk.Button(charwindow, command=lambda : self.characterwrite(0x540170))
-		btn_incineroar.config(image=incineroar)
-		btn_incineroar.image=incineroar
-		btn_incineroar.grid(row="7", column="8")
-		####################################
-		btn_lock = tk.Button(charwindow, text="LOCK ALL" ,command=lambda : self.lockallcharacters())
-		btn_lock.grid(row="7", column="9", sticky="NEWS")
-		
-		
+		if self.checkforsave():
+			hexstr1="FFFFFFFFFFFFFFFFFFFF".encode()
+			hexstr2="FFFFFFFFFFFFFFFFFFFFFFFF".encode()
+			self.writeToPositionStr(hexstr1,0x20,0x2A)
+			self.writeToPositionStr(hexstr2,0x54,0x60)
 
-gui = GUI()
-gui.resizable(False, False)
-gui.iconbitmap("icon.ico")
-gui.mainloop()
-sys.exit()
+			msg = QMessageBox()
+			msg.setIcon(QMessageBox.Information)
+			msg.setText("<b>Unlocked</b> all Mii Clothes!")
+			msg.setWindowTitle("Mii Clothes")
+			msg.setWindowIcon(QIcon(dir+'icon.ico'))
+			msg.exec_()
+
+
+	def unlockmilestones(self):
+		if self.checkforsave():
+			hexstr="FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF".encode()
+			self.writeToPositionStr(hexstr,0x555BB8,0x555BE8)
+
+			msg = QMessageBox()
+			msg.setIcon(QMessageBox.Information)
+			msg.setText("<b>Unlocked</b> all Milestones!")
+			msg.setWindowTitle("Milestones")
+			msg.setWindowIcon(QIcon(dir+'icon.ico'))
+			msg.exec_()
+
+		#########################################
+		#			  BUTTON DIALOGS			#
+		#########################################
+
+	def inputLanguage(self):
+		if self.checkforsave():
+			languages=("日本語","English","Français","Español","Deutsch","Italiano","Nederlands","Pусский","简体中文","繁體中文","한국어")
+			language=self.readFromPosition(0x3C6098,0x3C6099,"<B")
+			item, okPressed = QInputDialog.getItem(self, "Language","Language:", languages, language, False)
+			if okPressed and item:
+				self.writeToPosition(languages.index(item),0x3C6098,0x3C6099,"<B")
+
+	def inputGold(self):
+		if self.checkforsave():
+			gold=self.readFromPosition(0x5506DC,0x5506E0,"<L")
+			amount, okPressed = QInputDialog.getInt(self, "Gold","Amount:", gold, 0, 0x98967F, 10000)
+			if okPressed:
+				self.writeToPosition(amount,0x5506DC,0x5506E0,"<I") #Gold
+				self.writeToPosition(amount,0x540290,0x540294,"<I") #Obtained Gold record data
+				self.writeToPosition(0,0x540294,0x540298,"<I") #Gold Spent record data (set to 0)
+
+	def inputSP(self):
+		if self.checkforsave():
+			SP=self.readFromPosition(0x4831E4,0x4831E8,"<L")
+			amount, okPressed = QInputDialog.getInt(self, "SP","Amount:", SP, 0, 0x98967F, 10000)
+			if okPressed:
+				self.writeToPosition(amount,0x4831E4,0x4831E8,"<I") #SP
+				self.writeToPosition(amount,0x540298,0x54029C,"<I") #Obtained SP record data
+
+	def inputSnackS(self):
+		if self.checkforsave():
+			snackS=self.readFromPosition(0x4831CE,0x4831D0,"<H")
+			amount, okPressed = QInputDialog.getInt(self, "Snack (S)","Amount:", snackS, 0, 0x03E7, 50)
+			if okPressed:
+				self.writeToPosition(amount,0x4831CE,0x4831D0,"<H") #Snack(S)
+
+	def inputSnackM(self):
+		if self.checkforsave():
+			snackM=self.readFromPosition(0x4831D0,0x4831D2,"<H")
+			amount, okPressed = QInputDialog.getInt(self, "Snack (M)","Amount:", snackM, 0, 0x03E7, 50)
+			if okPressed:
+				self.writeToPosition(amount,0x4831D0,0x4831D2,"<H") #Snack(M)
+
+	def inputSnackL(self):
+		if self.checkforsave():
+			snackL=self.readFromPosition(0x4831D2,0x4831D4,"<H")
+			amount, okPressed = QInputDialog.getInt(self, "Snack (L)","Amount:", snackL, 0, 0x03E7, 50)
+			if okPressed:
+				self.writeToPosition(amount,0x4831D2,0x4831D4,"<H") #Snack(L)
+
+	def inputHammers(self):
+		if self.checkforsave():
+			hammers=self.readFromPosition(0x555E5C,0x555E5D,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "Hammers","Amount:", hammers, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x555E5C,0x555E5D,"<B") #Hammers
+
+	def inputTickets(self):
+		if self.checkforsave():
+			tickets=self.readFromPosition(0x5506CC,0x5506CD,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "Tickets","Amount:", tickets, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x5506CC,0x5506CD,"<B") #Tickets
+
+	def inputShuffleAll(self):
+		if self.checkforsave():
+			shuffleAll=self.readFromPosition(0x4831C0,0x4831C1,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "Shuffle All","Amount:", shuffleAll, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831C0,0x4831C1,"<B") #Shuffle All
+
+	def inputAllPrimaries(self):
+		if self.checkforsave():
+			allPrimaries=self.readFromPosition(0x4831C1,0x4831C2,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "All Primaries","Amount:", allPrimaries, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831C1,0x4831C2,"<B") #All Primaries
+
+	def inputAllSupports(self):
+		if self.checkforsave():
+			allSupports=self.readFromPosition(0x4831C2,0x4831C3,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "All Supports","Amount:", allSupports, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831C2,0x4831C3,"<B") #All Supports
+
+	def inputRematch(self):
+		if self.checkforsave():
+			rematch=self.readFromPosition(0x4831C4,0x4831C5,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "Rematch","Amount:", rematch, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831C4,0x4831C5,"<B") #Rematch
+
+	def inputFiller(self):
+		if self.checkforsave():
+			filler=self.readFromPosition(0x4831C3,0x4831C4,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "Filler","Amount:", filler, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831C3,0x4831C4,"<B") #Filler
+
+	def inputDamage50(self):
+		if self.checkforsave():
+			damage50=self.readFromPosition(0x4831C6,0x4831C7,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "50% Damage","Amount:", damage50, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831C6,0x4831C7,"<B") #50% Damage
+
+	def inputSlowFSCharging(self):
+		if self.checkforsave():
+			slowFSCharging=self.readFromPosition(0x4831C7,0x4831C8,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "Slow FS Charging","Amount:", slowFSCharging, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831C7,0x4831C8,"<B") #Slow FS Charging
+
+	def inputWeakenMinions(self):
+		if self.checkforsave():
+			weakenMinions=self.readFromPosition(0x4831C8,0x4831C9,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "Weaken Minions","Amount:", weakenMinions, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831C8,0x4831C9,"<B") #Weaken Minions
+
+	def inputHealthDrain(self):
+		if self.checkforsave():
+			healthDrain=self.readFromPosition(0x4831C9,0x4831CA,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "Health Drain","Amount:", healthDrain, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831C9,0x4831CA,"<B") #Health Drain
+
+	def inputDisableItems(self):
+		if self.checkforsave():
+			disableItems=self.readFromPosition(0x4831CA,0x4831CB,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "Disable Items","Amount:", disableItems, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831CA,0x4831CB,"<B") #Disable Items
+
+	def inputShieldSpacer(self):
+		if self.checkforsave():
+			shieldSpacer=self.readFromPosition(0x4831CB,0x4831CC,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "Shield Spacer","Amount:", shieldSpacer, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831CB,0x4831CC,"<B") #Shield Spacer
+
+	def inputSluggishShield(self):
+		if self.checkforsave():
+			sluggishShield=self.readFromPosition(0x4831CC,0x4831CD,"<B")
+			amount, okPressed = QInputDialog.getInt(self, "Sluggish Shield","Amount:", sluggishShield, 0, 0x63, 10)
+			if okPressed:
+				self.writeToPosition(amount,0x4831CC,0x4831CD,"<B") #Sluggish Shield
+
+
+if __name__ == '__main__':
+	app = QApplication(sys.argv)
+	app.setStyle("fusion")
+	if (sys.platform.startswith('linux')):
+		font=app.font()
+		font.setPointSize(9)
+		app.setFont(font)
+	ex = App()
+	sys.exit(app.exec_())
