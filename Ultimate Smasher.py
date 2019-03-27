@@ -16,8 +16,8 @@ class App(QMainWindow):
 	def __init__(self):
 		super().__init__()
 		global dir
-		#dir="img/"
-		dir=sys._MEIPASS+"/"
+		dir="img/"
+		#dir=sys._MEIPASS+"/"
 		self.title = "Ultimate Smasher 2.0-alpha1"
 		self.setWindowIcon(QIcon(dir+'icon.ico'))
 		width = 580
